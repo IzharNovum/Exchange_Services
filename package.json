@@ -1,0 +1,22 @@
+{
+  "name": "okexexchange",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "luxon": "^3.4.4",
+    "node-fetch": "^3.3.2",
+    "node-fetch-retry": "^2.0.1",
+    "nodemon": "^3.1.4"
+  }
+}
