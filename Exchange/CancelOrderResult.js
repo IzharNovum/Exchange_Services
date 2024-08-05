@@ -7,7 +7,7 @@ class CancelOrderResult {
      * @param {string} msg - Message related to the result.
      * @param {Object|null} [exchangeApiResult=null] - Result from the API call.
      */
-    constructor(isSuccess, msg, exchangeApiResult = null) {
+    constructor(isSuccess, msg, exchangeApiResult = null, response) {
         this.isSuccess = isSuccess;
         this.msg = msg;
 

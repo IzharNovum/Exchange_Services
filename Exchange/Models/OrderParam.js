@@ -65,11 +65,11 @@ class OrderParam {
         return this.orderType === OrderParam.TYPE_LIMIT;
     }
 
-    isBuy() {
+    static isBuy() {
         return this.side === OrderParam.SIDE_BUY;
     }
 
-    isSell() {
+    static isSell() {
         return this.side === OrderParam.SIDE_SELL;
     }
 
