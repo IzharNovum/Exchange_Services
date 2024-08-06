@@ -137,26 +137,30 @@ static async fetchBalanceFromExchange() {
         }
           return response;
         }).then((data) => {
-             if (data && data.data && data.data[0] && data.data[0].details) {
-                            console.log("Details:", data.data[0].details);
+        let result = { coins: [] };
+    
+        if (data && data.data && Array.isArray(data.data)) {
+            data.data.forEach((item) => {
+                if (Array.isArray(item.details)) {
+                    item.details.forEach((coinInfo) => {
+                        let availBal = parseFloat(coinInfo.availBal);
+                        let frozenBal = parseFloat(coinInfo.frozenBal);
+                        
+                        if (availBal > 0 || frozenBal > 0) {  
+                            result.coins.push({
+                                coin: coinInfo.ccy, 
+                                free: availBal, 
+                                used: frozenBal, 
+                                total: availBal + frozenBal
+                            });
                         }
-
-          let result = { coins: [] };
-      
-          if (Array.isArray(data)) {
-            data.forEach((coinInfo) => {
-                if (coinInfo.availBal > 0 || coinInfo.frozenBal > 0) {
-                    result.coins.push({
-                        coin: coinInfo.ccy,
-                        free: coinInfo.availBal,
-                        used: coinInfo.frozenBal,
-                        total: parseFloat(coinInfo.availBal) + parseFloat(coinInfo.frozenBal),
                     });
-                }
+                } 
             });
-        }
-      })
-      
+          }
+        console.log("Formatted Result:", result);
+        return result;
+          })
     } catch (error) {
         console.error("Error:", error.message);
         throw error;
