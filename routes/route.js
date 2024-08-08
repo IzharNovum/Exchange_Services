@@ -8,6 +8,8 @@ const router4 = express.Router();
 const router5 = express.Router();
 const router6 = express.Router();
 const router7 = express.Router();
+const router8 = express.Router();
+
 
 
 router1.get("/", (req, res) => {
@@ -26,7 +28,7 @@ router2.get("/", async (req, res) => {
 
 router3.get("/", async (req, res) => {
   try {
-      const PlaceOrder = await OkexService.placeOrderOnExchage();
+      const PlaceOrder = await OkexService.placeOrderOnExchange();
       res.json(PlaceOrder);
   } catch (error) {
       console.error("Error fetching PlaceOrder:", error.message);
@@ -34,10 +36,6 @@ router3.get("/", async (req, res) => {
   }
 });
 
-
-// router3.get("/", (req, res) => {
-//   res.send(OkexService.placeOrderOnExchage());
-// });
 router4.get("/", async (req, res) => {
   try {
       const CancelOrder = await OkexService.cancelOrderFromExchange();
@@ -47,9 +45,7 @@ router4.get("/", async (req, res) => {
       res.status(500).json({ error: "Failed to fetch CancelOrder" });
   }
 });
-// router4.get("/", (req, res) => {
-//   console.log(OkexService.cancelOrderFromExchange());
-// });
+
 router5.get("/", async (req, res) => {
   try {
       const FetchOrder = await OkexService.fetchOrderFromExchange();
@@ -59,9 +55,7 @@ router5.get("/", async (req, res) => {
       res.status(500).json({ error: "Failed to fetch FetchOrder" });
   }
 });
-// router5.get("/", (req, res) => {
-//   console.log(OkexService.fetchOrderFromExchange());
-// });
+
 router6.get("/", async (req, res) => {
   try {
       const Trades = await OkexService.loadTradesForClosedOrder();
@@ -83,5 +77,15 @@ router7.get("/", async (req, res) => {
   }
 });
 
+router8.get("/", async (req, res) => {
+  try {
+      const order = await OkexService.OrderDetails();
+      res.json(order);
+  } catch (error) {
+      console.error("Error fetching Trades:", error.message);
+      res.status(500).json({ error: "Failed to fetch Trades" });
+  }
+});
 
-export { router1, router2, router3, router4, router5, router6, router7 };
+
+export { router1, router2, router3, router4, router5, router6, router7, router8 };

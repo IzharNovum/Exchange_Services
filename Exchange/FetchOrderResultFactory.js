@@ -25,16 +25,8 @@ class FetchOrderResultFactory {
    * @return {FecthOrderResult}
    */
   static createFalseResult(failureMsg) {
-    const result = new FecthOrderResult(
-      false,
-      "",
-      0,
-      0,
-      0,
-      0,
-      DateTime.now().toISO()
-    );
-    result.setFailure(failureMsg);
+    const result = new FecthOrderResult(false,"",0,0,0,0,DateTime.now().toISO());
+    result.setFailureMsg(failureMsg);
     return result;
   }
 

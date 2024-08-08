@@ -1,11 +1,12 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import {router1, router2, router3, router4, router5, router6, router7} from "./routes/route.js";
+import {router1, router2, router3, router4, router5, router6, router7, router8} from "./routes/route.js";
+
 
 
 const app = express();
-dotenv.config({ path: "./config/config.env" });
+dotenv.config({path: "./Config/config.env"});
 
 app.use(
     cors({
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use('/trial', router1);
 app.use('/balance', router2);
 app.use('/place-order', router3);
+app.use('/order-details', router8);
 app.use('/cancel-order', router4);
 app.use('/fetch-order', router5);
 app.use('/trades', router6);

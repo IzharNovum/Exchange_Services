@@ -6,6 +6,7 @@ import CancelOrderResult from "./CancelOrderResult.js";
 import FetchOrderResultFactory from "./FetchOrderResultFactory.js";
 import OrderParam from "./Models/OrderParam.js";
 import NonCcxtExchangeService from "./NonCcxtExchangeService.js";
+import { response } from 'express';
 
 
 
@@ -46,12 +47,11 @@ class OkexService extends NonCcxtExchangeService{
     return "https://www.okx.com";
   }
 
+  
 
   static buildQueryParams(params) {
     return params;
   }
-
-
   static async getCommonHeaders(
     endPoint = null,
     params = null,
@@ -68,7 +68,7 @@ class OkexService extends NonCcxtExchangeService{
     let path = endPoint;
 
     if (method === "GET") {
-     const queryString =
+      queryString =
         Object?.keys(params ?? {}).length === 0
           ? ""
           : "?" +
@@ -97,27 +97,35 @@ class OkexService extends NonCcxtExchangeService{
       "OK-ACCESS-TIMESTAMP": ts,
       "OK-ACCESS-PASSPHRASE":passphrase,
       "accept": "application/json",
+      "Content-Type": method === "POST" ? "application/json" : undefined,
     };
   }
+
+
 
   // CALL_EXCHANGE_API
   static async callExchangeApi(endPoint, params, method = "GET", log = false) {
     const headers = await this.getCommonHeaders(endPoint, params, method);
-    const url = this.getBaseUrl() + endPoint;
+    const queryString = new URLSearchParams(params).toString();
+    const baseUrl = this.getBaseUrl();
+    const url = method === "GET" && queryString ? `${baseUrl}${endPoint}?${queryString}` : `${baseUrl}${endPoint}`;
     method = method.toUpperCase();
 
     try {
       const options = {
         method,
         headers,
-        ...(method === "GET" ? {} : { body: JSON.stringify(params) }),
+        ...(method === "GET" ? {} : { body: JSON.stringify(params) }),  
       };
+      console.log(options)
       const response = await fetch(url, options);
       const data = await response.json();
+  
       if (!response.ok) {
+        console.error('API Error:', data);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
+  
       return data;
     } catch (error) {
       console.error("Error making API call:", error);
@@ -129,115 +137,127 @@ class OkexService extends NonCcxtExchangeService{
 
   //https://www.okx.com/docs-v5/en/#trading-account-rest-api-get-balance
 static async fetchBalanceFromExchange() {
-    try {
-          await this.callExchangeApi("/api/v5/account/balance", []).then((response)=>{
-          if (response?.code > 0) {
-            const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
-            throw new Error(msg);
-        }
-          return response;
-        }).then((data) => {
-        let result = { coins: [] };
-    
-        if (data && data.data && Array.isArray(data.data)) {
-            data.data.forEach((item) => {
-                if (Array.isArray(item.details)) {
-                    item.details.forEach((coinInfo) => {
-                        let availBal = parseFloat(coinInfo.availBal);
-                        let frozenBal = parseFloat(coinInfo.frozenBal);
-                        
-                        if (availBal > 0 || frozenBal > 0) {  
-                            result.coins.push({
-                                coin: coinInfo.ccy, 
-                                free: availBal, 
-                                used: frozenBal, 
-                                total: availBal + frozenBal
-                            });
-                        }
-                    });
-                } 
-            });
-          }
-        console.log("Formatted Result:", result);
-        return result;
-          })
-    } catch (error) {
-        console.error("Error:", error.message);
-        throw error;
+  try {
+    const response = await this.callExchangeApi("/api/v5/account/balance", {});
+
+    if (response?.code > 0) {
+      const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+      throw new Error(msg);
     }
-  
+
+    let result = { coins: [] };
+
+    if (response?.data && Array.isArray(response.data)) {
+      response.data.forEach((item) => {
+        if (Array.isArray(item.details)) {
+          item.details.forEach((coinInfo) => {
+            const availBal = parseFloat(coinInfo.availBal);
+            const frozenBal = parseFloat(coinInfo.frozenBal);
+
+            if (availBal > 0 || frozenBal > 0) {
+              result.coins.push({
+                coin: coinInfo.ccy,
+                free: availBal,
+                used: frozenBal,
+                total: availBal + frozenBal,
+              });
+            }
+          });
+        }
+      });
+    }
+
+    console.log("Formatted Result:", result);
+    return result;
+
+  } catch (error) {
+    console.error("Error fetching balance:", error.message);
+    throw error;
+  }
+}
+
+  // https://www.okx.com/docs-v5/en/#order-book-trading-trade-post-place-order
+ static async  placeOrderOnExchange() {
+  try {
+    const priceStr = 2.15;
+    const params = this.buildQueryParams({
+      instId: "BTC-USDT",
+      tdMode: "cash",
+      side: "buy",
+      ordType: "limit",
+      px: priceStr,
+      sz: "1",
+      tgtCcy: "base_ccy",
+    });
+
+    const response = await this.callExchangeApi("/api/v5/trade/order", params, "POST");
+    console.log(response);
+
+    if (response.code > "0") {
+      const msg =
+        response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+      return PlaceOrderResultFactory.createFalseResult(msg, response);
+    }
+
+    return this.createSuccessPlaceOrderResult(response); 
+  } catch (error) {
+    console.error("Error Placing An Order!", error);
+  }
 }
 
 
-  // https://www.okx.com/docs-v5/en/#order-book-trading-trade-post-place-order
-  static async placeOrderOnExchage(){
-    try {
-      const symbol = 'BTC-USDT';
-      const priceStr = 2.15;
-      const params = this.buildQueryParams({
-        instId: symbol,
-        tdMode: "cash",
-        side: "buy",
-        ordType: "limit",
-        px: priceStr,
-        sz: "2",
-        tgtCcy: "base_ccy",
-      });
 
-
-      const data = await this.callExchangeApi("/api/v5/trade/order", params, "POST");
-      const response = await data;
-
-      if (response.code > 0) {
-        const msg =
-          response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
-        return PlaceOrderResultFactory.createFalseResult(msg, response);
-      }
-          
-      return  this.createSuccessPlaceOrderResult(response); 
-    } catch (error) {
-      console.error("Error Placing An Order!", error);
-    }
+static createSuccessPlaceOrderResult(response) {
+  try {
+    const orderId = response.data??[0].ordId;
+    const time = new Date(response.inTime);
+    const placeOrderResult = PlaceOrderResultFactory.createSuccessResult(
+      orderId,
+      UserOrder.STATUS_ONGOING,
+      time,
+      response,
+    );
+    return placeOrderResult;
+  
+  } catch (error) {
+    error("Not Successed!", error.message);
   }
 
-  static createSuccessPlaceOrderResult(apiResponse) {
-    try {
-      const orderId = apiResponse.data??[0].ordId;
-      const time = new Date(apiResponse.inTime);
-      const placeOrderResult = PlaceOrderResultFactory.createSuccessResult(
-        orderId,
-        UserOrder.STATUS_ONGOING,
-        time,
-        apiResponse,
-      );
-      return placeOrderResult;
-    
-    } catch (error) {
-      error("Not Successed!", error.message);
-    }
+}
 
-  }
+  // https://www.okx.com/docs-v5/en/?shell#order-book-trading-trade-get-order-details
+        static async OrderDetails(){
+          try {
+            const fetch = await this.callExchangeApi("/api/v5/trade/orders-pending", {});
+            const response = await fetch;
+
+            // console.log(response);
+            return response.data;
+          } catch (error) {
+            console.error("Error Fetching Order Details", error.message);
+          }
+        }
 
   // https://www.okx.com/docs-v5/en/#order-book-trading-trade-post-cancel-order
    static async cancelOrderFromExchange(orderId, symbol, options = []){
     try {
-       symbol = "BTC-USDT";
+      symbol = "BTC-USDT";
+      orderId = "1697761833580707840"
       const params = this.buildQueryParams({
         instId: symbol,
         ordId: orderId,
       });
-
+  
       const data = await this.callExchangeApi("/api/v5/trade/cancel-order", params, "POST");
       const response = await data;
-      if(!response){
-        console.error("iuzhar")
-      }
-      if(response?.code > 0){
+  
+      console.log(response);
+      if (response?.code > 0) {
         const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
         return new CancelOrderResult(false, msg, response);
       }
-      
-      return new CancelOrderResult(true, "success", response);
+  
+      return response;
     } catch (error) {
       console.error("Exchange Is Not Successed!", error);
     }
@@ -245,18 +265,21 @@ static async fetchBalanceFromExchange() {
 
 
   //https://www.okx.com/docs-v5/en/#order-book-trading-trade-get-order-details
-  static async fetchOrderFromExchange(orderId) {
+  static async  fetchOrderFromExchange(orderId) {
     try {
+      orderId = "1697504465752113152"
       const params = this.buildQueryParams({
         instId: 'BTC-USDT',
         ordId: orderId,
-      });
+      }); 
       const data = await this.callExchangeApi("/api/v5/trade/order", params, "POST");
       const response = await data;
       if(!response){
         console.error("No Response From Fetch!")
       }
+      console.log(response)
       return this.createFetchOrderResultFromResponse(response);
+
     } catch (error) {
       console.error("Error Fetching Order!", error.message);
     }
@@ -268,12 +291,12 @@ static async fetchBalanceFromExchange() {
         response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
       return FetchOrderResultFactory.createFalseResult(failureMsg);
     }
-
+  
     const status =
       this.STATE_MAP[response.data?.[0]?.state] ?? UserOrder.STATUS_ONGOING;
     const avg = response.data?.[0].avgPx || 0;
     const filled = response.data?.[0].accFillSz || 0;
-
+  
     return FetchOrderResultFactory.createSuccessResult(
       status,
       avg * filled,
@@ -284,26 +307,26 @@ static async fetchBalanceFromExchange() {
     );
   }
 
-
   //https://www.okx.com/docs-v5/en/#order-book-trading-trade-get-transaction-details-last-3-days
   static async loadTradesForClosedOrder(orderId = null) {
-      try {
-        const params = this.buildQueryParams({
-          ordId: orderId,
-        });
-        console.log(params)
-        const data = await this.callExchangeApi( "/api/v5/trade/fills", params);
-        const response = await data;
+    try {
+      orderId = "1697504465752113152"
+      const params = this.buildQueryParams({
+        ordId : orderId
+      });
 
-        return this.convertTradesToCcxtFormat(response ?? []);
+      const response = await this.callExchangeApi("/api/v5/trade/fills", params);
+      console.log(response);
+
+      return this.convertTradesToCcxtFormat(response ?? {})
     } catch (error) {
-      console.error(error, `${this.constructor.name} loadTradesForClosedOrder ${error.message}`);
-      throw error;
+      console.error("Error Fetching Trades!", error.message);
     }
   }
 
 
-  static convertTradesToCcxtFormat(trades) {
+
+  static convertTradesToCcxtFormat(trades = response) {
     let tradesArray = [];
   
 
@@ -329,32 +352,23 @@ static async fetchBalanceFromExchange() {
   
 
   //https://www.okx.com/docs-v5/en/#public-data-rest-api-get-index-candlesticks-history
-  static async fetchKlines() {
+  static async fetchKlines(sinceMs) {
     try {
-      const params = this.buildQueryParams({
+      const params = {
         instId: 'BTC-USDT',
-        bar: "1h",
-        after: "22334",
-      });
-
-      const data = await this.callExchangeApi("/api/v5/market/history-index-candles", params);
-      const response = await data;
-
-      let klines;
-
-      console.log('API Response:', response);
-
-
-      if (Array.isArray(response)) {
-        klines = response;
-    } else if (response && typeof response === 'object') {
-        klines = response.data || [response];
-    } else {
+        bar: '1m',
+        // after: sinceMs
+      };
+  
+  
+      const response = await this.callExchangeApi("/api/v5/market/history-index-candles", params);
+  
+      if (!response || !Array.isArray(response.data)) {
+        console.error('Unexpected response format:', response);
         throw new Error('Invalid data format');
-    }
-
-
-      klines = klines.map(kline => [
+      } 
+  
+      let klines = response.data.map(kline => [
         kline[0], // time
         kline[1], // open
         kline[2], // high
@@ -366,20 +380,16 @@ static async fetchBalanceFromExchange() {
       klines.sort((a, b) => a[0] - b[0]);
   
       return klines;
+  
     } catch (error) {
       console.error("Error Fetching Kline!", error.message);
+      throw error;
     }
-
   }
-
+  
+  
 
 }
 
 
 export default OkexService; 
-
-
-
-
-
-
