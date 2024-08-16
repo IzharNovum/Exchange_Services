@@ -165,7 +165,7 @@ class huobiExchange{
                                 used: frozenBal,
                                 total: availBal + frozenBal,
                             });
-                            hasValidCoin = true;
+                            hasValidCoin = true; //flag if there's any valid cois for trading!
                         }
                     });
 
