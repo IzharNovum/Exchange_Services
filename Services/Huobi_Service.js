@@ -4,6 +4,7 @@ import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import dotenv from "dotenv";
+import { response } from "express";
 
 dotenv.config({ path: './Config/.env' });
 
@@ -137,36 +138,49 @@ class huobiExchange{
         try {
             const accountId = "62926999";
             const response = await this.callExchangeAPI(`/v1/account/accounts/${accountId}/balance`, {});
-    
-            let result = { coins: [] };
-    
-            if (response?.data?.list && Array.isArray(response.data.list)) {
-                response.data.list.forEach((coinInfo) => {
-                    let availBal = 0;
-                    let frozenBal = 0;
-    
-                    //FOR TRADE BALANCE
-                    if(coinInfo.type === "trade"){
-                        availBal = coinInfo.available ? parseFloat(coinInfo.available) : 0;
-                    }
+                let result = { coins: [] };
 
-                    //FOR FROZEN BALANCE
-                    if (coinInfo.type === "frozen") {
-                        frozenBal = parseFloat(coinInfo.balance);
-                    }
-                    if (availBal >= 0 || frozenBal >= 0) {
-                        result.coins.push({
-                            coin: coinInfo.currency,
-                            type: coinInfo.type,
-                            free: availBal,
-                            used: frozenBal,
-                            total: availBal + frozenBal,
-                        });
-                    }
-                });
-            }
+                if (response?.data?.list && Array.isArray(response.data.list)) {
+                    let hasValidCoin = false; // Flag to track if any valid coin was added
+
+                    response.data.list.forEach((coinInfo) => {
+                        let availBal = 0;
+                        let frozenBal = 0;
+
+                        // For trade balance
+                        if (coinInfo.type === "trade") {
+                            availBal = coinInfo.available ? parseFloat(coinInfo.available) : 0;
+                        }
+
+                        // For frozen balance
+                        if (coinInfo.type === "frozen") {
+                            frozenBal = coinInfo.balance ? parseFloat(coinInfo.balance) : 0;
+                        }
+
+                        if (availBal > 0 || frozenBal > 0) {
+                            result.coins.push({
+                                coin: coinInfo.currency,
+                                type: coinInfo.type,
+                                free: availBal,
+                                used: frozenBal,
+                                total: availBal + frozenBal,
+                            });
+                            hasValidCoin = true;
+                        }
+                    });
+
+         // If There is no coins or balance available then this is a default...
+                if (!hasValidCoin) {
+                    result.coins.push({
+                        coin: '0',
+                        free: 0,
+                        used: 0,
+                        total: 0,
+                    });
+                }
+        }
+
             return result;
-    
         } catch (error) {
             console.error("Error Fetching Account Details:", error.message);
             throw error;
@@ -291,36 +305,23 @@ class huobiExchange{
 
 
     // https://huobiapi.github.io/docs/spot/v1/en/#search-historical-orders-within-48-hours
-    static async loadTradesForClosedOrder(orderID) {
+    static async loadTradesForClosedOrder() {
         try {
-            orderID = orderID;
-            const response = await this.callExchangeAPI(`/v1/order/orders/${orderID}/matchresults`, {});
+            const response = await this.callExchangeAPI(`/v1/order/history`, {});
     
             if (response.status !== "ok") {
                 console.error("Response Is Not OK!", response["err-msg"]);
                 throw new Error(`API Error: ${response["err-msg"]} for orderID: ${orderID}`);
             }
-    
-            return this.convertTradesToCcxtFormat(response?.data ?? []);
+            return this.convertTradesToCcxtFormat(response ?? {})
         } catch (error) {
             console.error("Error Loading Details!", error.message);
-    
-            //If there is an error response
-            return this.convertTradesToCcxtFormat([
-                {
-                    ordId: "N/A",
-                    fillSz: 0,
-                    fee: 0,
-                    feeCcy: "N/A",
-                    error: error.message
-                }
-            ]);
         }
     }
     
-    static convertTradesToCcxtFormat(trades = []) {
+    static convertTradesToCcxtFormat(trades = response) {
 
-        let tradesArray = [];
+        let tradesArray = "";
     
         if (Array.isArray(trades)) {
             tradesArray = trades;
@@ -338,6 +339,7 @@ class huobiExchange{
             },
             error: trade.error || null
         }));
+        console.log("responsne:", ccxtTrades)
     
         return ccxtTrades;
     }
