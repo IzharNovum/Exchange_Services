@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import UserOrder from "./Models/UserOrder.js";
+import UserOrder from "../Models/UserOrder.js";
 import FecthOrderResult from "./FetchOrderResult.js";
 
 

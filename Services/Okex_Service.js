@@ -1,11 +1,11 @@
 import fetch  from 'node-fetch';
 import crypto from "crypto";
-import UserOrder from "./Models/UserOrder.js";
-import PlaceOrderResultFactory from "./PlaceOrderResultFactory.js";
-import CancelOrderResult from "./CancelOrderResult.js";
-import FetchOrderResultFactory from "./FetchOrderResultFactory.js";
-import OrderParam from "./Models/OrderParam.js";
-import NonCcxtExchangeService from "./NonCcxtExchangeService.js";
+import UserOrder from "../Models/UserOrder.js";
+import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js";
+import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
+import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
+import OrderParam from "../Models/OrderParam.js";
+import NonCcxtExchangeService from "../Order_Result/NonCcxtExchangeService.js";
 import { response } from 'express';
 
 
@@ -59,9 +59,13 @@ class OkexService extends NonCcxtExchangeService{
   ) {
     const now = new Date();
     const ts = now.toISOString().replace(/(\.\d{3})\d+/, "$1");
-    const apiKey = process.env.API_KEY;
-    const secret = process.env.SECRET_KEY;
+    const Okex_API_KEY = process.env.Okex_API_KEY;
+    const Okex_SECRET_KEY = process.env.Okex_SECRET_KEY;
     const passphrase = process.env.PASSPHRASE_KEY;
+
+
+        console.log("okex_key:", Okex_API_KEY)
+         console.log("okex_secret:", Okex_SECRET_KEY)
 
     let queryString = "";
     let body = "";
@@ -87,12 +91,12 @@ class OkexService extends NonCcxtExchangeService{
 
     const signData = `${ts}${method}${path}${body}`;
     const sign = crypto
-      .createHmac("sha256", secret)
+      .createHmac("sha256", Okex_SECRET_KEY)
       .update(signData)
       .digest("base64");
 
     return {
-      "OK-ACCESS-KEY": apiKey,
+      "OK-ACCESS-KEY": Okex_API_KEY,
       "OK-ACCESS-SIGN": sign,
       "OK-ACCESS-TIMESTAMP": ts,
       "OK-ACCESS-PASSPHRASE":passphrase,
@@ -105,13 +109,14 @@ class OkexService extends NonCcxtExchangeService{
 
   // CALL_EXCHANGE_API
   static async callExchangeApi(endPoint, params, method = "GET", log = false) {
+    try {
     const headers = await this.getCommonHeaders(endPoint, params, method);
     const queryString = new URLSearchParams(params).toString();
     const baseUrl = this.getBaseUrl();
     const url = method === "GET" && queryString ? `${baseUrl}${endPoint}?${queryString}` : `${baseUrl}${endPoint}`;
     method = method.toUpperCase();
 
-    try {
+
       const options = {
         method,
         headers,
