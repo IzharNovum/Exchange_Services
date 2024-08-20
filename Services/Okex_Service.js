@@ -64,8 +64,8 @@ class OkexService extends NonCcxtExchangeService{
     const passphrase = process.env.PASSPHRASE_KEY;
 
 
-        console.log("okex_key:", Okex_API_KEY)
-         console.log("okex_secret:", Okex_SECRET_KEY)
+        // console.log("okex_key:", Okex_API_KEY)
+        //  console.log("okex_secret:", Okex_SECRET_KEY)
 
     let queryString = "";
     let body = "";
@@ -231,7 +231,7 @@ static createSuccessPlaceOrderResult(response) {
 }
 
   // https://www.okx.com/docs-v5/en/?shell#order-book-trading-trade-get-order-details
-        static async OrderDetails(){
+        static async pendingOrders(){
           try {
             const fetch = await this.callExchangeApi("/api/v5/trade/orders-pending", {});
             const response = await fetch;
@@ -253,10 +253,9 @@ static createSuccessPlaceOrderResult(response) {
         ordId: orderId,
       });
   
-      const data = await this.callExchangeApi("/api/v5/trade/cancel-order", params, "POST");
-      const response = await data;
-  
-      console.log(response);
+      const response = await this.callExchangeApi("/api/v5/trade/cancel-order", params, "POST");
+
+      // console.log(response);
       if (response?.code > 0) {
         const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
         return new CancelOrderResult(false, msg, response);

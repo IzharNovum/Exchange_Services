@@ -4,7 +4,7 @@ import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import dotenv from "dotenv";
-import { response } from "express";
+
 
 dotenv.config({ path: './Config/.env' });
 
@@ -172,7 +172,7 @@ class huobiExchange{
          // If There is no coins or balance available then this is a default...
                 if (!hasValidCoin) {
                     result.coins.push({
-                        coin: '0',
+                        coin: 0,
                         free: 0,
                         used: 0,
                         total: 0,
@@ -234,7 +234,7 @@ class huobiExchange{
     
 
     // https://huobiapi.github.io/docs/spot/v1/en/#get-all-open-orders
-    static async orderDetails(){
+    static async pendingOrders(){
         try {
             const response = await this.callExchangeAPI("/v1/order/openOrders", {});
 
@@ -311,7 +311,7 @@ class huobiExchange{
     
             if (response.status !== "ok") {
                 console.error("Response Is Not OK!", response["err-msg"]);
-                throw new Error(`API Error: ${response["err-msg"]} for orderID: ${orderID}`);
+                throw new Error(`API Error: ${response["err-msg"]}`);
             }
             return this.convertTradesToCcxtFormat(response ?? {})
         } catch (error) {
