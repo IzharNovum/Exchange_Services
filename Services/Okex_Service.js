@@ -52,91 +52,94 @@ class OkexService extends NonCcxtExchangeService{
   static buildQueryParams(params) {
     return params;
   }
-  static async getCommonHeaders(
-    endPoint = null,
-    params = null,
-    method = "GET"
-  ) {
-    const now = new Date();
-    const ts = now.toISOString().replace(/(\.\d{3})\d+/, "$1");
-    const Okex_API_KEY = process.env.Okex_API_KEY;
-    const Okex_SECRET_KEY = process.env.Okex_SECRET_KEY;
-    const passphrase = process.env.PASSPHRASE_KEY;
 
 
-        // console.log("okex_key:", Okex_API_KEY)
-        //  console.log("okex_secret:", Okex_SECRET_KEY)
-
-    let queryString = "";
-    let body = "";
-    let path = endPoint;
-
-    if (method === "GET") {
-      queryString =
-        Object?.keys(params ?? {}).length === 0
-          ? ""
-          : "?" +
-            Object.keys(params)
-              .map(
-                (key) =>
-                  `${encodeURIComponent(key)}=${encodeURIComponent(
-                    params[key]
-                  )}`
-              )
-              .join("&");
-      path = endPoint + queryString;
-    } else {
-      body = JSON.stringify(params);
-    }
-
-    const signData = `${ts}${method}${path}${body}`;
-    const sign = crypto
-      .createHmac("sha256", Okex_SECRET_KEY)
-      .update(signData)
-      .digest("base64");
-
-    return {
-      "OK-ACCESS-KEY": Okex_API_KEY,
-      "OK-ACCESS-SIGN": sign,
-      "OK-ACCESS-TIMESTAMP": ts,
-      "OK-ACCESS-PASSPHRASE":passphrase,
-      "accept": "application/json",
-      "Content-Type": method === "POST" ? "application/json" : undefined,
-    };
-  }
+              //HEADER FOR AUTH....
+            static async getCommonHeaders(
+              endPoint = null,
+              params = null,
+              method = "GET"
+            ) {
+              const now = new Date();
+              const ts = now.toISOString().replace(/(\.\d{3})\d+/, "$1");
+              const Okex_API_KEY = process.env.Okex_API_KEY;
+              const Okex_SECRET_KEY = process.env.Okex_SECRET_KEY;
+              const passphrase = process.env.PASSPHRASE_KEY;
 
 
+                  // console.log("okex_key:", Okex_API_KEY)
+                  //  console.log("okex_secret:", Okex_SECRET_KEY)
 
-  // CALL_EXCHANGE_API
-  static async callExchangeApi(endPoint, params, method = "GET", log = false) {
-    try {
-    const headers = await this.getCommonHeaders(endPoint, params, method);
-    const queryString = new URLSearchParams(params).toString();
-    const baseUrl = this.getBaseUrl();
-    const url = method === "GET" && queryString ? `${baseUrl}${endPoint}?${queryString}` : `${baseUrl}${endPoint}`;
-    method = method.toUpperCase();
+              let queryString = "";
+              let body = "";
+              let path = endPoint;
+
+              if (method === "GET") {
+                queryString =
+                  Object?.keys(params ?? {}).length === 0
+                    ? ""
+                    : "?" +
+                      Object.keys(params)
+                        .map(
+                          (key) =>
+                            `${encodeURIComponent(key)}=${encodeURIComponent(
+                              params[key]
+                            )}`
+                        )
+                        .join("&");
+                path = endPoint + queryString;
+              } else {
+                body = JSON.stringify(params);
+              }
+
+              const signData = `${ts}${method}${path}${body}`;
+              const sign = crypto
+                .createHmac("sha256", Okex_SECRET_KEY)
+                .update(signData)
+                .digest("base64");
+
+              return {
+                "OK-ACCESS-KEY": Okex_API_KEY,
+                "OK-ACCESS-SIGN": sign,
+                "OK-ACCESS-TIMESTAMP": ts,
+                "OK-ACCESS-PASSPHRASE":passphrase,
+                "accept": "application/json",
+                "Content-Type": method === "POST" ? "application/json" : undefined,
+              };
+            }
 
 
-      const options = {
-        method,
-        headers,
-        ...(method === "GET" ? {} : { body: JSON.stringify(params) }),  
-      };
-      console.log(options)
-      const response = await fetch(url, options);
-      const data = await response.json();
-  
-      if (!response.ok) {
-        console.error('API Error:', data);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-  
-      return data;
-    } catch (error) {
-      console.error("Error making API call:", error);
-      return { error: error.message };
-    }
-  }
+                    // CALL_EXCHANGE_API
+          static async callExchangeApi(endPoint, params, method = "GET", log = false) {
+            try {
+            const headers = await this.getCommonHeaders(endPoint, params, method);
+            const queryString = new URLSearchParams(params).toString();
+            const baseUrl = this.getBaseUrl();
+            const url = method === "GET" && queryString ? `${baseUrl}${endPoint}?${queryString}` : `${baseUrl}${endPoint}`;
+            method = method.toUpperCase();
+
+
+              const options = {
+                method,
+                headers,
+                ...(method === "GET" ? {} : { body: JSON.stringify(params) }),  
+              };
+              console.log(options)
+              const response = await fetch(url, options);
+              const data = await response.json();
+          
+              if (!response.ok) {
+                console.error('API Error:', data);
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+          
+              return data;
+            } catch (error) {
+              console.error("Error making API call:", error);
+              return { error: error.message };
+            }
+          }
+
 
 
 
