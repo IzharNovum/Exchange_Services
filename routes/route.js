@@ -1,6 +1,7 @@
 import express from "express";
 import OkexService from "../Services/Okex_Service.js";
 import HuobiService from "../Services/Huobi_Service.js"
+import BinanceService from "../Services/Binance_Service.js";
 
 const router = express.Router();
 
@@ -63,9 +64,9 @@ const routes = [
             res.status(500).json({ error: "Failed to fetch Klines" });
         }
     }},
-    { path: "/Okex-Service/order-details", handler: async (req, res) => {
+    { path: "/Okex-Service/pending-order", handler: async (req, res) => {
         try {
-            const order = await OkexService.OrderDetails();
+            const order = await OkexService.pendingOrders();
             res.json(order);
         } catch (error) {
             console.error("Error fetching order details:", error.message);
@@ -112,9 +113,9 @@ const routes = [
           res.status(500).json({ error: "Failed to fetch order" });
       }
   }},
-  { path: "/Huobi-Service/order-details", handler: async (req, res) => {
+  { path: "/Huobi-Service/pending-order", handler: async (req, res) => {
       try {
-          const Trades = await HuobiService.orderDetails();
+          const Trades = await HuobiService.pendingOrders();
           res.json(Trades);
       } catch (error) {
           console.error("Error fetching trades:", error.message);
@@ -157,6 +158,81 @@ const routes = [
         res.status(500).json({ error: "Failed to fetch order details" });
     }
 }},
+
+                    //ROUTES FOR BINANCE SERVICES......
+
+        { path: "/Binance-Service/balance", handler: async (req, res) => {
+            try {
+                const order = await BinanceService.fetchBalanceOnExchange();
+                res.json(order);
+            } catch (error) {
+                console.error("Error fetching balance details:", error.message);
+                res.status(500).json({ error: "Failed to fetch balance details" });
+            }
+        }},
+
+        { path: "/Binance-Service/place-order", handler: async (req, res) => {
+            try {
+                const order = await BinanceService.placeOrderOnExchange();
+                res.json(order);
+            } catch (error) {
+                console.error("Error placing an order:", error.message);
+                res.status(500).json({ error: "Failed to place an order" });
+            }
+        }},
+
+        { path: "/Binance-Service/pending-order", handler: async (req, res) => {
+            try {
+                const order = await BinanceService.pendingOrders();
+                res.json(order);
+            } catch (error) {
+                console.error("Error fetching pending order details:", error.message);
+                res.status(500).json({ error: "Failed to fetch pending order details" });
+            }
+        }},
+
+        { path: "/Binance-Service/cancel-order", handler: async (req, res) => {
+            try {
+                const order = await BinanceService.cancelOrderOnExchange();
+                res.json(order);
+            } catch (error) {
+                console.error("Error cancelling order:", error.message);
+                res.status(500).json({ error: "Failed to cancel an order" });
+            }
+        }},
+
+        { path: "/Binance-Service/fetch-order", handler: async (req, res) => {
+            try {
+                const order = await BinanceService.fetchOrderFromExchange();
+                res.json(order);
+            } catch (error) {
+                console.error("Error fetching order details:", error.message);
+                res.status(500).json({ error: "Failed to fetch order details" });
+            }
+        }},
+
+        { path: "/Binance-Service/trades", handler: async (req, res) => {
+            try {
+                const order = await BinanceService.loadTradesForClosedOrder();
+                res.json(order);
+            } catch (error) {
+                console.error("Error fetching trades:", error.message);
+                res.status(500).json({ error: "Failed to fetch trades" });
+            }
+        }},
+
+        { path: "/Binance-Service/klines", handler: async (req, res) => {
+            try {
+                const order = await BinanceService.fetchKlines();
+                res.json(order);
+            } catch (error) {
+                console.error("Error fetching Kline details:", error.message);
+                res.status(500).json({ error: "Failed to fetch Kline details" });
+            }
+        }},
+
+
+
 ];
 
 
