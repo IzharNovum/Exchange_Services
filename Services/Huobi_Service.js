@@ -4,6 +4,7 @@ import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import dotenv from "dotenv";
+import sendLog from "../Log_System/sendLogs.js";
 
 
 dotenv.config({ path: './Config/.env' });
@@ -77,6 +78,11 @@ class huobiExchange{
     static async callExchangeAPI(endPoint, params, method = "GET") {
         try {
             const { url, body } = await this.authentication(endPoint, params, method);
+            //LOGS AN ERROR IF ANY AUTH CREDENTIALS MISSING....
+            if(!url){
+                await sendLog("Huobi-Service", 'Auth', 'CRITICAL', `${endPoint}`, 'Missing Auth Data!');
+            }
+
             const options = {
                     method,
                     body: method === "POST" ? body : undefined,
@@ -96,6 +102,8 @@ class huobiExchange{
             // console.log("Response Data:", response);
             return response;
         } catch (error) {
+            //LOGS AN ERROR IF ANY ISSUE WITH API CALL...
+            await sendLog("Huobi-Service", 'Call-Exchange-API', 'ERROR', `${endPoint}`, `${error.message}`);
             console.warn("API Call Failed!", error.message);
             throw error;
         }
@@ -104,40 +112,64 @@ class huobiExchange{
     
     // https://huobiapi.github.io/docs/spot/v1/en/#get-all-accounts-of-the-current-user
     static async accountDetails() {
+        const endPoint = "/v1/account/accounts";
         try {
-            const response = await this.callExchangeAPI("/v1/account/accounts", {});
-            // console.log("Full Response:", response);
+            const response = await this.callExchangeAPI(endPoint, {});
+            console.log("Full Response:", response);
+
+            if (response.status !== "ok") {
+                await sendLog("Huobi-Service", "Account-Details-API", "ERROR", `${endPoint}`, "No Response!");
+                console.error("Response Is Not OK!", response["err-msg"]);
+                throw new Error(`API Error: ${response["err-msg"]}`);
+            }
     
-            return response;
+        //SUCCESS LOG...
+        await sendLog("Huobi-Service", 'Account-Details', 'INFO', `${endPoint}`, 'Successfully Fetched Account Details!');
+        return response;
         } catch (error) {
-            console.error("Error Fetching Account Details:", error.message);
-            throw error;
+        //LOGS AN ERROR...
+        await sendLog("Huobi-Service", 'Account-Details', 'ERROR', `${endPoint}`, `${error.message}`);
+        console.error("Error fetching balance:", error.message);
+        throw error;
         }
     }
 
     // https://huobiapi.github.io/docs/spot/v1/en/#get-the-total-valuation-of-platform-assets
     static async accountValue(){
+        const endPoint = "/v2/account/valuation";
         try {
-            const response = await this.callExchangeAPI("/v2/account/valuation", {});
-            // console.log("Full Response:", response);
+            const response = await this.callExchangeAPI(endPoint, {});
+
 
             if (response.success !== true) {
-                console.error("Response Is Not OK!", response.message);
-                throw new Error(`API Error: ${response.message} (Code: ${response.code})`);
+                await sendLog("Huobi-Service", "Account-Value-API", "ERROR", `${endPoint}`, "No Response!");
+                console.error("Response Is Not OK!", response["err-msg"]);
+                throw new Error(`API Error: ${response["err-msg"]}`);
             }
 
+            //SUCCESS LOG...
+            await sendLog("Huobi-Service", 'Account-Value', 'INFO', `${endPoint}`, 'Operation Successfull!');
             return response;
         } catch (error) {
-            console.error("Error Fetching Balance:", error.message);
-            throw error;
+        //LOGS AN ERROR...
+        await sendLog("Huobi-Service", 'Account-Value', 'ERROR', `${endPoint}`, `${error.message}`);
+        console.error("Error fetching balance:", error.message);
+        throw error;
         }
     }
 
     // https://huobiapi.github.io/docs/spot/v1/en/#get-account-balance-of-a-specific-account
     static async fetchBalanceOnExchange() {
+        const accountId = "62926999";
+        const endPoint = `/v1/account/accounts/${accountId}/balance`
         try {
-            const accountId = "62926999";
-            const response = await this.callExchangeAPI(`/v1/account/accounts/${accountId}/balance`, {});
+            const response = await this.callExchangeAPI(endPoint, {});
+
+            if(!response){
+                //LOGS AN ERROR...
+                await sendLog("Huobi-Service", "Balance-API", "ERROR", `${endPoint}`, "No Response!");
+                console.warn("Response Is Not OK!", response);
+              }
                 let result = { coins: [] };
 
                 if (response?.data?.list && Array.isArray(response.data.list)) {
@@ -180,16 +212,21 @@ class huobiExchange{
                 }
         }
 
-            return result;
+        //SUCCESS LOG...
+        await sendLog("Huobi-Service", 'Balance', 'INFO', `${endPoint}`, 'Successfully Fetched Balance!');
+        return result;
         } catch (error) {
-            console.error("Error Fetching Account Details:", error.message);
-            throw error;
+        //LOGS AN ERROR...
+        await sendLog("Huobi-Service", 'Balance', 'ERROR', `${endPoint}`, `${error.message}`);
+        console.error("Error fetching balance:", error.message);
+        throw error;
         }
     }
     
   
     // https://huobiapi.github.io/docs/spot/v1/en/#place-a-new-order
     static async placeOrderOnExchange(){
+        const endPoint = "/v1/order/orders/place";
         try {
             const params = this.buildQueryParams({
                 "account-id" : 62926999,
@@ -199,35 +236,42 @@ class huobiExchange{
                 price: "6095.65" 
             });
 
-            const response = await this.callExchangeAPI("/v1/order/orders/place", params, "POST");
+            const response = await this.callExchangeAPI(endPoint, params, "POST");
 
             if (response.status !== "0k") {
-                const msg =
-                  response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
-                return PlaceOrderResultFactory.createFalseResult(msg, response);
-              }
+                const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+            //LOGS AN ERROR...
+            await sendLog("Huobi-Service", "PlaceOrder-API", "ERROR", `${endPoint}`, `${msg}`);
+            return PlaceOrderResultFactory.createFalseResult(msg, response);
+              };
 
+            const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+
+            //SUCCESS LOG...
+            await sendLog("Huobi-Service", "Place Order", "INFO", `${endPoint}`, `${msg || "Order Placed!"}`); 
             return this.createSuccessPlaceOrderResult(response);
         } catch (error) {
-            console.error("Error Placing An Order", error.message);
+        //LOGS AN ERROR...
+        await sendLog("Huobi-Service", 'Place Order', 'ERROR', `${endPoint}`, `${error.message}` );
+        console.warn("Error Placing An Order!", error.message);
+        throw new error;
         }
     }
 
 
     static createSuccessPlaceOrderResult(response) {
         try {
-            const STATUS_ONGOING = "ongoing";
             const orderId = response?.data;
             const time = new Date();
             const placeOrderResult = PlaceOrderResultFactory.createSuccessResult(
                 orderId,
-                STATUS_ONGOING,
+                UserOrder.STATUS_ONGOING,
                 time,
                 response,
             );
               return placeOrderResult;
         } catch (error) {
-              error("Not Successed!", error.message);
+              error("Format Not Successed!", error.message);
         }
     }
 
@@ -235,87 +279,116 @@ class huobiExchange{
 
     // https://huobiapi.github.io/docs/spot/v1/en/#get-all-open-orders
     static async pendingOrders(){
+        const endPoint = "/v1/order/openOrders";
         try {
-            const response = await this.callExchangeAPI("/v1/order/openOrders", {});
+            const response = await this.callExchangeAPI(endPoint, {});
 
             if (response.status !== "ok") {
-                console.error("Response Is Not OK!", response["err-msg"]);
-                throw new Error(`API Error: ${response["err-msg"]}`);
+                await sendLog("Huobi-Service", "PendingOrder-API", "ERROR", `${endPoint}`, "No Response!");
+                console.error("Response Is Not OK!", response);
             }
 
-            return response;
+          //SUCCESS LOG...
+          await sendLog("Huobi-Service", 'Pending Order', 'INFO', `${endPoint}`, 'Successfully Fetched Pending Order!');
+          return response;
         } catch (error) {
-            console.error("Error Fetching Order-Details", error.message);
-            throw error;
+          //LOGS AN ERROR...
+          await sendLog("Huobi-Service", 'Pending Order', 'ERROR', `${endPoint}`, `${error.message}`);
+          console.warn("Error Fetching Pending Orders!", error.message);
+          throw new error;
         }
     }
 
     // https://huobiapi.github.io/docs/spot/v1/en/#submit-cancel-for-an-order
     static async cancelOrderOnExchange(orderID) {
+        orderID = orderID;
+        const endPoint = `/v1/order/orders/${orderID}/submitcancel`;
         try {
-            orderID = orderID;
-            const response = await this.callExchangeAPI(`/v1/order/orders/${orderID}/submitcancel`, {}, "POST");
+            const response = await this.callExchangeAPI(endPoint, {}, "POST");
     
             if (response.status !== "ok") {
                 const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+                //LOGS AN ERROR...
+                await sendLog("Huobi-Service", "CancelOrder-API", "ERROR", `${endPoint}`, `${msg}`);
                 return new CancelOrderResult(false, msg, response);
             }
     
-            return response;
+            //SUCCESS LOG...
+            await sendLog("Huobi-Service", "Cancel Order", "INFO", `${endPoint}`, "Order Cancelled!");
+            return new CancelOrderResult(true, "Success", response);
         } catch (error) {
-            console.error("Error Canceling the Order", error.message);
-            throw error;
+            //LOGS AN ERROR...
+            await sendLog("Huobi-Service", 'Cancel Order', 'ERROR', `${endPoint}`, `${error.message}`);
+            console.warn("Error Cancelling An Order!", error.message);
+            throw new error;
         }
     }
 
     // https://huobiapi.github.io/docs/spot/v1/en/#get-the-order-detail-of-an-order
     static async fetchOrderFromExchange(orderID){
+        orderID = "233948934";
+        const endPoint = `/v1/order/orders/${orderID}`;
         try {
-            orderID = "233948934";
-            const response = await this.callExchangeAPI(`/v1/order/orders/${orderID}`, {});    
+            const response = await this.callExchangeAPI(endPoint, {});
     
             if (response.status !== "ok") {
-                const failureMsg =
-                response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
-              return FetchOrderResultFactory.createFalseResult(failureMsg);
+                const failureMsg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+                // LOGS AN ERROR...
+                await sendLog("Huobi-Service", "FetchOrder-API", "ERROR", `${endPoint}`, `${failureMsg}`);
+                return FetchOrderResultFactory.createFalseResult(failureMsg);
             }
     
+            //SUCCESS LOG...
+            await sendLog("Huobi-Service", "Fetch Order", "INFO", `${endPoint}`, "Order Fetch Successfull!");
             return this.createFetchOrderResultFromResponse(response);
         } catch (error) {
-            console.error("Error Fetching the Order", error.message);
-            throw error;
+            //LOGS AN ERROR...
+            await sendLog("Huobi-Service", 'Fetch Order', 'ERROR', `${endPoint}`, `${error.message}`);
+            console.warn("Error Fetching Order Details!", error.message);
+            throw new error;
         }
     }
 
     static createFetchOrderResultFromResponse(response) {      
         const status =
-          this.STATE_MAP[response.data?.[0]?.state] ?? UserOrder.STATUS_ONGOING;
-        const avg = response.data?.[0].avgPx || 0;
-        const filled = response.data?.[0].accFillSz || 0;
+          this.STATE_MAP[response.data?.state] ?? UserOrder.STATUS_ONGOING;
+          const avg = parseFloat(response.data?.price) || 0;
+          const filled = parseFloat(response.data?.['field-amount']) || 0;          
       
         return FetchOrderResultFactory.createSuccessResult(
-          status,
-          avg * filled,
-          avg,
-          response.data?.[0].fee || 0,
-          filled,
-          new Date(response.data?.[0].cTime || 0).toISOString()
+          status,                              //order status
+          avg * filled,                        //total cost
+          avg,                                 //price coz of no avg in res
+          response.data?.['field-fees'] || 0,  //fee
+          filled,                              //filled amount
+          new Date(response.data?.[0].cTime || 0).toISOString() //Time
         );
       }
 
 
     // https://huobiapi.github.io/docs/spot/v1/en/#search-historical-orders-within-48-hours
     static async loadTradesForClosedOrder() {
+        const endPoint = "/v1/order/history";
         try {
-            const response = await this.callExchangeAPI(`/v1/order/history`, {});
+            const response = await this.callExchangeAPI(endPoint, {});
+            // console.log("responsne:", response)
     
             if (response.status !== "ok") {
+                const failureMsg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+                //LOGS AN ERROR...
+                await sendLog("Huobi-Service", "Trades-API", "ERROR", `${endPoint}`, `${failureMsg}`);
                 console.error("Response Is Not OK!", response["err-msg"]);
                 throw new Error(`API Error: ${response["err-msg"]}`);
             }
-            return this.convertTradesToCcxtFormat(response ?? {})
+
+        //SUCCESS LOG...
+        await sendLog("Huobi-Service", "Trades", "INFO", `${endPoint}`, 'Operation Succesfull!');
+        return this.convertTradesToCcxtFormat(response ?? {});
         } catch (error) {
-            console.error("Error Loading Details!", error.message);
+        //LOGS AN ERROR...
+        await sendLog("Huobi-Service", 'Trades', 'ERROR', `${endPoint}`, `${error.message}`);
+        console.error("Error Fetching Trades", error);
+        throw new error;
         }
     }
     
@@ -328,18 +401,19 @@ class huobiExchange{
         } else if (trades && typeof trades === 'object') {
             tradesArray = [trades];
         }
-    
+
         const ccxtTrades = tradesArray.map(trade => ({
-            order: trade.ordId || "N/A",
-            amount: trade.fillSz || 0,
-            baseQty: trade.fillSz || 0,
+            order: trade.id || "N/A",  //'id' to 'order'
+            amount: parseFloat(trade['field-amount']) || 0,  //'field-amount' to 'amount'
+            baseQty: parseFloat(trade['field-amount']) || 0,  //'field-amount' to 'baseQty'
             fee: {
-                currency: trade.feeCcy || "N/A",
-                cost: Math.abs(trade.fee) || 0,
+                currency: trade.symbol || "N/A",  //'symbol' to 'feeCcy'
+                cost: Math.abs(parseFloat(trade['field-fees'])) || 0,  //'field-fees' to 'cost'
             },
-            error: trade.error || null
+            error: trade.error || null  // Set 'error' if the state is not 'submitted'
         }));
-        console.log("responsne:", ccxtTrades)
+        
+        console.log("responsne:", ccxtTrades);
     
         return ccxtTrades;
     }
@@ -347,13 +421,22 @@ class huobiExchange{
     
     // https://huobiapi.github.io/docs/spot/v1/en/#get-klines-candles
     static async fetchKlines(){
+        const endPoint = "/market/history/kline";
         try {
             const params = this.buildQueryParams({
                 symbol : "btcusdt",
                 period : "1min",
             });
 
-            const response = await this.callExchangeAPI("/market/history/kline", params);
+            const response = await this.callExchangeAPI(endPoint, params);
+
+            if (response.status !== "ok") {
+                const failureMsg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+                //LOGS AN ERROR...
+                await sendLog("Huobi-Service", "Klines-API", "ERROR", `${endPoint}`, `${failureMsg}`);
+                console.error("Response Is Not OK!", response["err-msg"]);
+                throw new Error(`API Error: ${response["err-msg"]}`);
+            }
 
             let klines = response.data.map(kline => ({
                 id  : kline.id,      // ID or timestamp
@@ -368,10 +451,14 @@ class huobiExchange{
           
               klines.sort((a, b) => a.id - b.id); //Sorted By ID
           
-              return klines;
+            //SUCCESS LOG...
+            await sendLog("Huobi-Service", "Klines", "INFO", `${endPoint}`, 'Operation Succesfull!');
+            return klines;
         } catch (error) {
-            console.error("Error Fetching Klines!", error.message);
-            throw error;
+            //LOGS AN ERROR...
+            await sendLog("Huobi-Service", 'Klines', 'ERROR', `${endPoint}`, `${error.message}`);
+            console.warn("Error Fetching Klines!", error);
+            throw new error;
         }
     }
 

@@ -4,10 +4,9 @@ import UserOrder from "../Models/UserOrder.js";
 import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
-import OrderParam from "../Models/OrderParam.js";
 import NonCcxtExchangeService from "../Order_Result/NonCcxtExchangeService.js";
 import { response } from 'express';
-
+import sendLog from '../Log_System/sendLogs.js';
 
 
 
@@ -21,7 +20,7 @@ class OkexService extends NonCcxtExchangeService{
     static STATUS_OPENS_CCXT = ["open", "new", "NEW", "ongoing"];
     static STATUS_CANCELS_CCXT = ["CANCELLED", "cancelled", "CANCELED"];
     static STATUS_FILLED_CCXT = ["FILLED", "filled", "closed", "CLOSED"];
-  
+    
     static STATE_MAP = {
       canceled: OkexService.STATUS_CANCELLED,
       mmp_canceled: OkexService.STATUS_CANCELLED,
@@ -113,6 +112,12 @@ class OkexService extends NonCcxtExchangeService{
           static async callExchangeApi(endPoint, params, method = "GET", log = false) {
             try {
             const headers = await this.getCommonHeaders(endPoint, params, method);
+
+                //LOGS AN ERROR IF ANY AUTH CREDENTIALS MISSING....
+              if(!headers){
+                await sendLog("Okex-Service", 'Auth', 'CRITICAL', `${endPoint}`, 'Missing Auth Data!');
+              }
+
             const queryString = new URLSearchParams(params).toString();
             const baseUrl = this.getBaseUrl();
             const url = method === "GET" && queryString ? `${baseUrl}${endPoint}?${queryString}` : `${baseUrl}${endPoint}`;
@@ -135,6 +140,8 @@ class OkexService extends NonCcxtExchangeService{
           
               return data;
             } catch (error) {
+              //LOGS AN ERROR IF ANY ISSUE WITH API CALL...
+              await sendLog("Okex-Service", 'Call-Exchange-API', 'ERROR', `${endPoint}`, `${error.message}`);
               console.error("Error making API call:", error);
               return { error: error.message };
             }
@@ -145,11 +152,13 @@ class OkexService extends NonCcxtExchangeService{
 
   //https://www.okx.com/docs-v5/en/#trading-account-rest-api-get-balance
 static async fetchBalanceFromExchange() {
+  const endPoint = "/api/v5/account/balance";
   try {
-    const response = await this.callExchangeApi("/api/v5/account/balance", {});
+    const response = await this.callExchangeApi(endPoint, {});
 
     if (response?.code > 0) {
       const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+      await sendLog("Okex-Service", "Balance-API", "ERROR", `${endPoint}`, `${msg}`);
       throw new Error(msg);
     }
 
@@ -175,10 +184,12 @@ static async fetchBalanceFromExchange() {
       });
     }
 
-    console.log("Formatted Result:", result);
+      //SUCCESS LOG...
+    await sendLog("Okex-Service", 'Balance', 'INFO', `${endPoint}`, 'Successfully Fetched Balance!');
     return result;
-
   } catch (error) {
+    //LOGS AN ERROR...
+    await sendLog("Okex-Service", 'Balance', 'ERROR', `${endPoint}`, `${error.message}`);
     console.error("Error fetching balance:", error.message);
     throw error;
   }
@@ -186,6 +197,7 @@ static async fetchBalanceFromExchange() {
 
   // https://www.okx.com/docs-v5/en/#order-book-trading-trade-post-place-order
  static async  placeOrderOnExchange() {
+  const endPoint = "/api/v5/trade/order";
   try {
     const priceStr = 2.15;
     const params = this.buildQueryParams({
@@ -198,21 +210,26 @@ static async fetchBalanceFromExchange() {
       tgtCcy: "base_ccy",
     });
 
-    const response = await this.callExchangeApi("/api/v5/trade/order", params, "POST");
-    console.log(response);
+    const response = await this.callExchangeApi(endPoint, params, "POST");
 
     if (response.code > "0") {
-      const msg =
-        response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+      const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+      //LOGS AN ERROR...
+      await sendLog("Okex-Service", "PlaceOrder-API", "ERROR", `${endPoint}`, `${response.msg}`);
       return PlaceOrderResultFactory.createFalseResult(msg, response);
     }
+    const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
 
+    //SUCCESS LOG...
+    await sendLog("Okex-Service", "Place Order", "INFO", `${endPoint}`, `${msg}`);
     return this.createSuccessPlaceOrderResult(response); 
   } catch (error) {
-    console.error("Error Placing An Order!", error);
+    //LOGS AN ERROR...
+    await sendLog("Okex-Service", 'Place Order', 'ERROR', `${endPoint}`, `${error.message}` );
+    console.error("Error Placing An Order!", error.message);
+    throw new error;
   }
 }
-
 
 
 static createSuccessPlaceOrderResult(response) {
@@ -226,79 +243,106 @@ static createSuccessPlaceOrderResult(response) {
       response,
     );
     return placeOrderResult;
-  
   } catch (error) {
-    error("Not Successed!", error.message);
+    console.error("Not Successed!", error.message);
   }
 
 }
 
   // https://www.okx.com/docs-v5/en/?shell#order-book-trading-trade-get-order-details
         static async pendingOrders(){
+          const endPoint = "/api/v5/trade/orders-pending";
           try {
-            const fetch = await this.callExchangeApi("/api/v5/trade/orders-pending", {});
-            const response = await fetch;
+            const response = await this.callExchangeApi(endPoint, {});
 
-            // console.log(response);
-            return response.data;
+            if(response.code > 0){
+              //LOGS AN ERROR...
+              await sendLog("Okex-Service", "PendingOrder-API", "ERROR", `${endPoint}`, `${response.msg}`);
+              console.warn("Response Is Not OK!", response);
+            }
+
+            //SUCCESS LOG...
+            await sendLog("Okex-Service", 'Pending Order', 'INFO', `${endPoint}`, 'Successfully Fetched Pending Order!');
+            return response;
           } catch (error) {
+            //LOGS AN ERROR...
+            await sendLog("Okex-Service", 'Pending Order', 'ERROR', `${endPoint}`, `${error.message}`);
             console.error("Error Fetching Order Details", error.message);
+            throw new error;
           }
         }
 
   // https://www.okx.com/docs-v5/en/#order-book-trading-trade-post-cancel-order
    static async cancelOrderFromExchange(orderId, symbol, options = []){
+    const endPoint = "/api/v5/trade/cancel-order";
     try {
       symbol = "BTC-USDT";
-      orderId = "1697761833580707840"
+      orderId = "1756032454621872128"
       const params = this.buildQueryParams({
         instId: symbol,
         ordId: orderId,
       });
   
-      const response = await this.callExchangeApi("/api/v5/trade/cancel-order", params, "POST");
+      const response = await this.callExchangeApi(endPoint, params, "POST");
 
-      // console.log(response);
       if (response?.code > 0) {
         const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+        //LOGS AN ERROR...
+        await sendLog("Okex-Service", "CancelOrder-API", "ERROR", `${endPoint}`, `${msg}`);
         return new CancelOrderResult(false, msg, response);
       }
   
-      return response;
+      //SUCCESS LOG...
+      await sendLog("Okex-Service", "Cancel Order", "INFO", `${endPoint}`, "Order Cancelled!");
+      return new CancelOrderResult(true, "Success", response);
     } catch (error) {
-      console.error("Exchange Is Not Successed!", error);
+      //LOGS AN ERROR...
+      await sendLog("Okex-Service", 'Cancel Order', 'ERROR', `${endPoint}`, `${error.message}`);
+      console.error("Exchange Is Not Successed!", error.message);
+      throw new error;
     }
    }
 
 
   //https://www.okx.com/docs-v5/en/#order-book-trading-trade-get-order-details
   static async  fetchOrderFromExchange(orderId) {
+    const endPoint = "/api/v5/trade/order";
     try {
       orderId = "1697504465752113152"
       const params = this.buildQueryParams({
         instId: 'BTC-USDT',
         ordId: orderId,
       }); 
-      const data = await this.callExchangeApi("/api/v5/trade/order", params, "POST");
-      const response = await data;
-      if(!response){
-        console.error("No Response From Fetch!")
+      const response = await this.callExchangeApi(endPoint, params, "GET");
+      
+      if (response?.code > 0) {
+        const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+        //LOGS AN ERROR...
+        await sendLog("Okex-Service", "FetchOrder-API", "ERROR", `${endPoint}`, `${msg}`);
+        return new CancelOrderResult(false, msg, response);
       }
-      console.log(response)
+
+      //SUCCESS LOG...
+      await sendLog("Okex-Service", "Fetch Order", "INFO", `${endPoint}`, "Order Fetched Successfully!");
       return this.createFetchOrderResultFromResponse(response);
-
     } catch (error) {
+      //LOGS AN ERROR...
+      await sendLog("Okex-Service", 'Fetch Order', 'ERROR', `${endPoint}`, `${error.message}`);
       console.error("Error Fetching Order!", error.message);
+      throw new error;
     }
-
   }
-  static createFetchOrderResultFromResponse(response) {
-    if (response === null || response.code > 0) {
-      const failureMsg =
-        response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
-      return FetchOrderResultFactory.createFalseResult(failureMsg);
-    }
-  
+
+ static async createFetchOrderResultFromResponse(response) {
+  const endPoint = "/api/v5/trade/order";
+  if (response === null || response.code > 0) {
+    const failureMsg =
+      response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+    //LOGS AN ERROR...
+    await sendLog("Okex-Service", "FetchOrder-API", "ERROR", `${endPoint}`, `${failureMsg}`);
+    return FetchOrderResultFactory.createFalseResult(failureMsg);
+  }
+
     const status =
       this.STATE_MAP[response.data?.[0]?.state] ?? UserOrder.STATUS_ONGOING;
     const avg = response.data?.[0].avgPx || 0;
@@ -316,22 +360,32 @@ static createSuccessPlaceOrderResult(response) {
 
   //https://www.okx.com/docs-v5/en/#order-book-trading-trade-get-transaction-details-last-3-days
   static async loadTradesForClosedOrder(orderId = null) {
+    const endPoint = "/api/v5/trade/fills";
     try {
       orderId = "1697504465752113152"
       const params = this.buildQueryParams({
         ordId : orderId
       });
 
-      const response = await this.callExchangeApi("/api/v5/trade/fills", params);
-      console.log(response);
+      const response = await this.callExchangeApi(endPoint, params);
+      // console.log(response);
 
-      return this.convertTradesToCcxtFormat(response ?? {})
+      if(!response){
+        //LOGS AN ERROR...
+        await sendLog("Okex-Service", "Trades-API", "ERROR", `${endPoint}`, "No Response!");
+        console.warn("Response Is Not OK!", response);
+      }
+
+      //SUCCESS LOG...
+      await sendLog("Okex-Service", "Trades", "INFO", `${endPoint}`, 'Operation Succesfull!');
+      return this.convertTradesToCcxtFormat(response ?? {});
     } catch (error) {
+      //LOGS AN ERROR...
+      await sendLog("Okex-Service", 'Trades', 'ERROR', `${endPoint}`, `${error.message}`);
       console.error("Error Fetching Trades!", error.message);
+      throw new error;
     }
   }
-
-
 
   static convertTradesToCcxtFormat(trades = response) {
     let tradesArray = [];
@@ -350,7 +404,8 @@ static createSuccessPlaceOrderResult(response) {
       fee: {
         currency: trade.feeCcy || "N/A",
         cost: Math.abs(trade.fee) || 0,
-      }
+      },
+      error: trade.error || null
     }));
   
     return ccxtTrades;
@@ -360,6 +415,7 @@ static createSuccessPlaceOrderResult(response) {
 
   //https://www.okx.com/docs-v5/en/#public-data-rest-api-get-index-candlesticks-history
   static async fetchKlines(sinceMs) {
+    const endPoint = "/api/v5/market/history-index-candles";
     try {
       const params = {
         instId: 'BTC-USDT',
@@ -368,12 +424,14 @@ static createSuccessPlaceOrderResult(response) {
       };
   
   
-      const response = await this.callExchangeApi("/api/v5/market/history-index-candles", params);
-  
-      if (!response || !Array.isArray(response.data)) {
+      const response = await this.callExchangeApi(endPoint, params);
+
+      //LOGS AN ERROR...
+      if (Array.isArray(response.data) && response.data.length === 0) {
         console.error('Unexpected response format:', response);
-        throw new Error('Invalid data format');
-      } 
+        await sendLog("Okex-Service", "Klines-API", "ERROR", `${endPoint}`, "No Klines data found.");
+        return; // Exit early if there is no data
+      };
   
       let klines = response.data.map(kline => [
         kline[0], // time
@@ -386,9 +444,12 @@ static createSuccessPlaceOrderResult(response) {
   
       klines.sort((a, b) => a[0] - b[0]);
   
+      //SUCCESS LOG...
+      await sendLog("Okex-Service", "Klines", "INFO", `${endPoint}`, 'Operation Succesfull!');
       return klines;
-  
     } catch (error) {
+      //LOGS AN ERROR...
+      await sendLog("Okex-Service", 'Klines', 'ERROR', `${endPoint}`, `${error.message}`);
       console.error("Error Fetching Kline!", error.message);
       throw error;
     }
