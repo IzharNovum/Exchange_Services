@@ -6,7 +6,7 @@ import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import NonCcxtExchangeService from "../Order_Result/NonCcxtExchangeService.js";
 import { response } from 'express';
-import sendLog from '../Log_System/sendLogs.js';
+import sendLogs from '../Log_System/sendLogs.js';
 
 
 
@@ -41,6 +41,7 @@ class OkexService extends NonCcxtExchangeService{
       "1d": "1Dutc",
     };
 
+  static userName = process.env.USER_NAME;
 
   static getBaseUrl() {
     return "https://www.okx.com";
@@ -54,11 +55,7 @@ class OkexService extends NonCcxtExchangeService{
 
 
               //HEADER FOR AUTH....
-            static async getCommonHeaders(
-              endPoint = null,
-              params = null,
-              method = "GET"
-            ) {
+            static async getCommonHeaders(endPoint = null,params = null,method = "GET") {
               const now = new Date();
               const ts = now.toISOString().replace(/(\.\d{3})\d+/, "$1");
               const Okex_API_KEY = process.env.Okex_API_KEY;
@@ -115,7 +112,7 @@ class OkexService extends NonCcxtExchangeService{
 
                 //LOGS AN ERROR IF ANY AUTH CREDENTIALS MISSING....
               if(!headers){
-                await sendLog("Okex-Service", 'Auth', 'CRITICAL', `${endPoint}`, 'Missing Auth Data!');
+                await sendLogs.exchangeCritical.critical("Missing Auth Data!", endPoint, this.userName);
               }
 
             const queryString = new URLSearchParams(params).toString();
@@ -141,7 +138,7 @@ class OkexService extends NonCcxtExchangeService{
               return data;
             } catch (error) {
               //LOGS AN ERROR IF ANY ISSUE WITH API CALL...
-              await sendLog("Okex-Service", 'Call-Exchange-API', 'ERROR', `${endPoint}`, `${error.message}`);
+              await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
               console.error("Error making API call:", error);
               return { error: error.message };
             }
@@ -158,7 +155,7 @@ static async fetchBalanceFromExchange() {
 
     if (response?.code > 0) {
       const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
-      await sendLog("Okex-Service", "Balance-API", "ERROR", `${endPoint}`, `${msg}`);
+      await sendLogs.exchangeError.error("No Response!", endPoint, this.userName);
       throw new Error(msg);
     }
 
@@ -184,12 +181,12 @@ static async fetchBalanceFromExchange() {
       });
     }
 
-      //SUCCESS LOG...
-    await sendLog("Okex-Service", 'Balance', 'INFO', `${endPoint}`, 'Successfully Fetched Balance!');
+    //SUCCESS LOG...
+    await sendLogs.exchangeInfo.info("Successfully Fetched Balance!", endPoint, this.userName);
     return result;
   } catch (error) {
     //LOGS AN ERROR...
-    await sendLog("Okex-Service", 'Balance', 'ERROR', `${endPoint}`, `${error.message}`);
+    await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
     console.error("Error fetching balance:", error.message);
     throw error;
   }
@@ -215,24 +212,24 @@ static async fetchBalanceFromExchange() {
     if (response.code > "0") {
       const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
       //LOGS AN ERROR...
-      await sendLog("Okex-Service", "PlaceOrder-API", "ERROR", `${endPoint}`, `${response.msg}`);
+      await sendLogs.exchangeError.error(`${msg}`, endPoint, this.userName);
       return PlaceOrderResultFactory.createFalseResult(msg, response);
     }
     const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
 
     //SUCCESS LOG...
-    await sendLog("Okex-Service", "Place Order", "INFO", `${endPoint}`, `${msg}`);
-    return this.createSuccessPlaceOrderResult(response); 
+    await sendLogs.exchangeInfo.info(`${msg || "Order Placed!"}`, endPoint, this.userName);
+    return await this.createSuccessPlaceOrderResult(response); 
   } catch (error) {
     //LOGS AN ERROR...
-    await sendLog("Okex-Service", 'Place Order', 'ERROR', `${endPoint}`, `${error.message}` );
+    await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
     console.error("Error Placing An Order!", error.message);
     throw new error;
   }
 }
 
 
-static createSuccessPlaceOrderResult(response) {
+static async createSuccessPlaceOrderResult(response) {
   try {
     const orderId = response.data??[0].ordId;
     const time = new Date(response.inTime);
@@ -244,9 +241,10 @@ static createSuccessPlaceOrderResult(response) {
     );
     return placeOrderResult;
   } catch (error) {
+    // WARN LOG...
+    await sendLogs.exchangeWarn.warn("Failed To Format The Response", endPoint, this.userName);
     console.error("Not Successed!", error.message);
   }
-
 }
 
   // https://www.okx.com/docs-v5/en/?shell#order-book-trading-trade-get-order-details
@@ -257,16 +255,16 @@ static createSuccessPlaceOrderResult(response) {
 
             if(response.code > 0){
               //LOGS AN ERROR...
-              await sendLog("Okex-Service", "PendingOrder-API", "ERROR", `${endPoint}`, `${response.msg}`);
+              await sendLogs.exchangeError.error(`${response.msg ? "No Response" : ""}`, endPoint, this.userName);
               console.warn("Response Is Not OK!", response);
             }
 
             //SUCCESS LOG...
-            await sendLog("Okex-Service", 'Pending Order', 'INFO', `${endPoint}`, 'Successfully Fetched Pending Order!');
+            await sendLogs.exchangeInfo.info("Successfully Fetched Pending Order!", endPoint, this.userName);
             return response;
           } catch (error) {
             //LOGS AN ERROR...
-            await sendLog("Okex-Service", 'Pending Order', 'ERROR', `${endPoint}`, `${error.message}`);
+            await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
             console.error("Error Fetching Order Details", error.message);
             throw new error;
           }
@@ -288,16 +286,16 @@ static createSuccessPlaceOrderResult(response) {
       if (response?.code > 0) {
         const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
         //LOGS AN ERROR...
-        await sendLog("Okex-Service", "CancelOrder-API", "ERROR", `${endPoint}`, `${msg}`);
+        await sendLogs.exchangeError.error(`${msg}`, endPoint, this.userName);
         return new CancelOrderResult(false, msg, response);
       }
   
       //SUCCESS LOG...
-      await sendLog("Okex-Service", "Cancel Order", "INFO", `${endPoint}`, "Order Cancelled!");
+      await sendLogs.exchangeInfo.info("Order Cancelled!", endPoint, this.userName);
       return new CancelOrderResult(true, "Success", response);
     } catch (error) {
       //LOGS AN ERROR...
-      await sendLog("Okex-Service", 'Cancel Order', 'ERROR', `${endPoint}`, `${error.message}`);
+      await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
       console.error("Exchange Is Not Successed!", error.message);
       throw new error;
     }
@@ -314,20 +312,13 @@ static createSuccessPlaceOrderResult(response) {
         ordId: orderId,
       }); 
       const response = await this.callExchangeApi(endPoint, params, "GET");
-      
-      if (response?.code > 0) {
-        const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
-        //LOGS AN ERROR...
-        await sendLog("Okex-Service", "FetchOrder-API", "ERROR", `${endPoint}`, `${msg}`);
-        return new CancelOrderResult(false, msg, response);
-      }
 
       //SUCCESS LOG...
-      await sendLog("Okex-Service", "Fetch Order", "INFO", `${endPoint}`, "Order Fetched Successfully!");
-      return this.createFetchOrderResultFromResponse(response);
+      await sendLogs.exchangeInfo.info("Order Fetch Successfull!", endPoint, this.userName);
+      return await this.createFetchOrderResultFromResponse(response);
     } catch (error) {
       //LOGS AN ERROR...
-      await sendLog("Okex-Service", 'Fetch Order', 'ERROR', `${endPoint}`, `${error.message}`);
+      await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
       console.error("Error Fetching Order!", error.message);
       throw new error;
     }
@@ -335,28 +326,35 @@ static createSuccessPlaceOrderResult(response) {
 
  static async createFetchOrderResultFromResponse(response) {
   const endPoint = "/api/v5/trade/order";
-  if (response === null || response.code > 0) {
-    const failureMsg =
-      response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
-    //LOGS AN ERROR...
-    await sendLog("Okex-Service", "FetchOrder-API", "ERROR", `${endPoint}`, `${failureMsg}`);
-    return FetchOrderResultFactory.createFalseResult(failureMsg);
-  }
-
-    const status =
-      this.STATE_MAP[response.data?.[0]?.state] ?? UserOrder.STATUS_ONGOING;
-    const avg = response.data?.[0].avgPx || 0;
-    const filled = response.data?.[0].accFillSz || 0;
+  try {
+    if (response === null || response.code > 0) {
+      const failureMsg =
+        response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+      //LOGS AN ERROR...
+      await sendLogs.exchangeError.error(`${failureMsg}`, endPoint, this.userName);
+      return FetchOrderResultFactory.createFalseResult(failureMsg);
+    }
   
-    return FetchOrderResultFactory.createSuccessResult(
-      status,
-      avg * filled,
-      avg,
-      response.data?.[0].fee || 0,
-      filled,
-      new Date(response.data?.[0].cTime || 0).toISOString()
-    );
+      const status =
+        this.STATE_MAP[response.data?.[0]?.state] ?? UserOrder.STATUS_ONGOING;
+      const avg = response.data?.[0].avgPx || 0;
+      const filled = response.data?.[0].accFillSz || 0;
+    
+      return FetchOrderResultFactory.createSuccessResult(
+        status,
+        avg * filled,
+        avg,
+        response.data?.[0].fee || 0,
+        filled,
+        new Date(response.data?.[0].cTime || 0).toISOString()
+      );
+  } catch (error) {
+      // WARN LOG...
+      await sendLogs.exchangeWarn.warn("Failed To Format The Response", endPoint, this.userName);
+      console.warn("Error Fetching Order Details!", error.message);
+      throw new error;
   }
+}
 
   //https://www.okx.com/docs-v5/en/#order-book-trading-trade-get-transaction-details-last-3-days
   static async loadTradesForClosedOrder(orderId = null) {
@@ -372,43 +370,51 @@ static createSuccessPlaceOrderResult(response) {
 
       if(!response){
         //LOGS AN ERROR...
-        await sendLog("Okex-Service", "Trades-API", "ERROR", `${endPoint}`, "No Response!");
+        await sendLogs.exchangeError.error(`${failureMsg}`, endPoint, this.userName);
         console.warn("Response Is Not OK!", response);
       }
 
       //SUCCESS LOG...
-      await sendLog("Okex-Service", "Trades", "INFO", `${endPoint}`, 'Operation Succesfull!');
-      return this.convertTradesToCcxtFormat(response ?? {});
+      await sendLogs.exchangeInfo.info('Operation Succesfull!', endPoint, this.userName);
+      return await this.convertTradesToCcxtFormat(response ?? {});
     } catch (error) {
       //LOGS AN ERROR...
-      await sendLog("Okex-Service", 'Trades', 'ERROR', `${endPoint}`, `${error.message}`);
+      await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
       console.error("Error Fetching Trades!", error.message);
       throw new error;
     }
   }
 
-  static convertTradesToCcxtFormat(trades = response) {
-    let tradesArray = [];
-  
+  static async convertTradesToCcxtFormat(trades = response) {
+      try {
+        let tradesArray = [];
+        
 
-    if (Array.isArray(trades)) {
-      tradesArray = trades;
-    } else if (trades && typeof trades === 'object') {
-      tradesArray = [trades];
-    }
+        if (Array.isArray(trades)) {
+          tradesArray = trades;
+        } else if (trades && typeof trades === 'object') {
+          tradesArray = [trades];
+        }
 
-    const ccxtTrades = tradesArray.map(trade => ({
-      order: trade.ordId || "N/A",
-      amount: trade.fillSz || 0,
-      baseQty: trade.fillSz || 0,
-      fee: {
-        currency: trade.feeCcy || "N/A",
-        cost: Math.abs(trade.fee) || 0,
-      },
-      error: trade.error || null
-    }));
-  
-    return ccxtTrades;
+        const ccxtTrades = tradesArray.map(trade => ({
+          order: trade.ordId || "N/A",
+          amount: trade.fillSz || 0,
+          baseQty: trade.fillSz || 0,
+          fee: {
+            currency: trade.feeCcy || "N/A",
+            cost: Math.abs(trade.fee) || 0,
+          },
+          error: trade.error || null
+        }));
+
+        return ccxtTrades;
+      } catch (error) {
+          // WARN LOG...
+          await sendLogs.exchangeWarn.warn("Failed To Format The Response", endPoint, this.userName);
+          console.warn("Error Fetching Order Details!", error.message);
+          throw new error;
+        
+      }
   }
   
   
@@ -429,7 +435,7 @@ static createSuccessPlaceOrderResult(response) {
       //LOGS AN ERROR...
       if (Array.isArray(response.data) && response.data.length === 0) {
         console.error('Unexpected response format:', response);
-        await sendLog("Okex-Service", "Klines-API", "ERROR", `${endPoint}`, "No Klines data found.");
+        await sendLogs.exchangeError.error( "No Klines data found", endPoint, this.userName);
         return; // Exit early if there is no data
       };
   
@@ -445,11 +451,11 @@ static createSuccessPlaceOrderResult(response) {
       klines.sort((a, b) => a[0] - b[0]);
   
       //SUCCESS LOG...
-      await sendLog("Okex-Service", "Klines", "INFO", `${endPoint}`, 'Operation Succesfull!');
+      await sendLogs.exchangeInfo.info( 'Operation Succesfull!', endPoint, this.userName);
       return klines;
     } catch (error) {
       //LOGS AN ERROR...
-      await sendLog("Okex-Service", 'Klines', 'ERROR', `${endPoint}`, `${error.message}`);
+      await sendLogs.exchangeError.error( `${error.message}`, endPoint, this.userName);
       console.error("Error Fetching Kline!", error.message);
       throw error;
     }

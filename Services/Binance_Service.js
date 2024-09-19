@@ -4,7 +4,7 @@ import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import { response } from "express";
-import sendLog from "../Log_System/sendLogs.js";
+import sendLogs from "../Log_System/sendLogs.js";
 
 
 class BinanceService{
@@ -25,6 +25,8 @@ class BinanceService{
     partially_filled: BinanceService.STATUS_PARTIAL_FILLED,
     filled: BinanceService.STATUS_FILLED,
   };
+
+  static userName = process.env.USER_NAME;
 
 
   static getBaseUrl(){
@@ -86,7 +88,7 @@ class BinanceService{
 
                 //LOGS AN ERROR IF ANY AUTH CREDENTIALS MISSING....
                 if(!url || !headers){
-                  await sendLog("Binance-Service", 'Auth', 'CRITICAL', `${endPoint}`, 'Missing Auth Data!');
+                  await sendLogs.exchangeCritical.critical("Missing Auth Data!", endPoint, this.userName);
                 }
 
                 const options = {
@@ -100,11 +102,12 @@ class BinanceService{
                 return response;
             } catch (error) {
               //LOGS AN ERROR IF ANY ISSUE WITH API CALL...
-                await sendLog("Binance-Service", 'Call-Exchange-API', 'ERROR', `${endPoint}`, `${error.message}`);
-                console.warn("Error CallExchangeAPI!", error);
+                await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
+                console.error("Error CallExchangeAPI!", error);
                 throw error;
             }
         }
+
 
 
 
@@ -116,8 +119,9 @@ class BinanceService{
 
           if(!response){
             //LOGS AN ERROR...
-            await sendLog("Binance-Service", "Balance-API", "ERROR", `${endPoint}`, "No Response!");
+            await sendLogs.exchangeError.error("No Response!", endPoint, this.userName);
             console.warn("Response Is Not OK!", response);
+            throw error;
           }
 
         let result = { coins: [] };
@@ -156,11 +160,11 @@ class BinanceService{
     }
 
         //SUCCESS LOG...
-        await sendLog("Binance-Service", 'Balance', 'INFO', `${endPoint}`, 'Successfully Fetched Balance!');
+        await sendLogs.exchangeInfo.info("Successfully Fetched Balance!", endPoint, this.userName);
         return result;
         } catch (error) {
         //LOGS AN ERROR...
-          await sendLog("Binance-Service", 'Balance', 'ERROR', `${endPoint}`, `${error.message}`);
+          await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
           console.error("Error fetching balance:", error.message);
           throw error;
         }
@@ -186,23 +190,23 @@ class BinanceService{
       if(response.status !== 200){
         const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
         //LOGS AN ERROR...
-         await sendLog("Binance-Service", "PlaceOrder-API", "ERROR", `${endPoint}`, `${msg}`);
+         await sendLogs.exchangeError.error(`${msg}`, endPoint, this.userName);
         return PlaceOrderResultFactory.createFalseResult(msg, response);
       }
 
       const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
       //SUCCESS LOG...
-      await sendLog("Binance-Service", "Place Order", "INFO", `${endPoint}`, `${msg || "Order Placed!"}`);
-      return this.createSuccessPlaceOrderResult(response);
+      await sendLogs.exchangeInfo.info(`${msg || "Order Placed!"}`, endPoint, this.userName);
+      return await this.createSuccessPlaceOrderResult(response);
     } catch (error) {
         //LOGS AN ERROR...
-      await sendLog("Binance-Service", 'Place Order', 'ERROR', `${endPoint}`, `${error.message}` );
+      await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
       console.warn("Error Placing An Order!", error.message);
       throw new error;
     }
   }
 
-  static createSuccessPlaceOrderResult(response) {
+  static async createSuccessPlaceOrderResult(response) {
     try {
         const orderId = response.orderId;
         const time = new Date(); 
@@ -214,7 +218,9 @@ class BinanceService{
         );
           return placeOrderResult;
     } catch (error) {
-          console.error("Format Not Successed!", error.message);
+      // WARN LOG...
+      await sendLogs.exchangeWarn.warn("Failed To Format The Response", endPoint, this.userName);
+      console.error("Format Not Successed!", error.message);
     }
 }
 
@@ -227,15 +233,15 @@ class BinanceService{
 
       if(!response){
         //LOGS AN ERROR...
-        await sendLog("Binance-Service", "PendingOrder-API", "ERROR", `${endPoint}`, "No Response!");
+        await sendLogs.exchangeError.error("No Response!", endPoint, this.userName);
         console.warn("Response Is Not OK!", response);
       }
           //SUCCESS LOG...
-       await sendLog("Binance-Service", 'Pending Order', 'INFO', `${endPoint}`, 'Successfully Fetched Pending Order!');
+       await sendLogs.exchangeInfo.info("Successfully Fetched Pending Order!", endPoint, this.userName);
       return response;
     } catch (error) {
               //LOGS AN ERROR...
-      await sendLog("Binance-Service", 'Pending Order', 'ERROR', `${endPoint}`, `${error.message}`);
+      await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
       console.warn("Error Fetching Pending Orders!", error.message);
       throw new error;
     }
@@ -256,16 +262,16 @@ class BinanceService{
          if(response.status !== 200){
           const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
           //LOGS AN ERROR...
-          await sendLog("Binance-Service", "CancelOrder-API", "ERROR", `${endPoint}`, `${msg}`);
+          await sendLogs.exchangeError.error(`${msg}`, endPoint, this.userName);
           return new CancelOrderResult(false, msg, response);
         }
 
         //SUCCESS LOG...
-        await sendLog("Binance-Service", "Cancel Order", "INFO", `${endPoint}`, "Order Cancelled!");
+        await sendLogs.exchangeInfo.info("Order Cancelled!", endPoint, this.userName);
         return new CancelOrderResult(true, "Success", response);
       } catch (error) {
       //LOGS AN ERROR...
-      await sendLog("Binance-Service", 'Cancel Order', 'ERROR', `${endPoint}`, `${error.message}`);
+      await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
       console.warn("Error Cancelling An Order!", error.message);
       throw new error;
       }
@@ -286,17 +292,17 @@ class BinanceService{
           const failureMsg =
             response?.sMsg ?? response.msg ?? "Unexpected response format or missing critical fields.";
           // LOGS AN ERROR...
-          await sendLog("Binance-Service", "FetchOrder-API", "ERROR", `${endPoint}`, `${failureMsg}`);
+          await sendLogs.exchangeError.error(`${failureMsg}`, endPoint, this.userName);
           return FetchOrderResultFactory.createFalseResult(failureMsg);
         }
         
 
         //SUCCESS LOG...
-        await sendLog("Binance-Service", "Fetch Order", "INFO", `${endPoint}`, "Order Fetch Successfull!");
+        await sendLogs.exchangeInfo.info("Order Fetch Successfull!", endPoint, this.userName);
         return this.createFetchOrderResultFromResponse(response);
       } catch (error) {
         //LOGS AN ERROR...
-        await sendLog("Binance-Service", 'Fetch Order', 'ERROR', `${endPoint}`, `${error.message}`);
+        await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
         console.warn("Error Fetching Order Details!", error.message);
         throw new error;
       }
@@ -329,38 +335,45 @@ class BinanceService{
         const response = await this.callExchangeAPI(endPoint, params);
 
         //SUCCESS LOG...
-        await sendLog("Binance-Service", "Trades", "INFO", `${endPoint}`, 'Operation Succesfull!');
+        await sendLogs.exchangeInfo.info('Operation Succesfull!', endPoint, this.userName);
         return this.convertTradesToCcxtFormat(response ?? {});
       } catch (error) {
         //LOGS AN ERROR...
-        await sendLog("Binance-Service", 'Trades', 'ERROR', `${endPoint}`, `${error.message}`);
+        await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
         console.error("Error Fetching Trades", error)
         throw new error;
       }
     }
     
-    static convertTradesToCcxtFormat(trades = response) {
+    static async convertTradesToCcxtFormat(trades = response) {
 
-      let tradesArray = "";
+      try {
+        let tradesArray = "";
   
-      if (Array.isArray(trades)) {
-          tradesArray = trades;
-      } else if (trades && typeof trades === 'object') {
-          tradesArray = [trades];
+        if (Array.isArray(trades)) {
+            tradesArray = trades;
+        } else if (trades && typeof trades === 'object') {
+            tradesArray = [trades];
+        }
+    
+        const ccxtTrades = tradesArray.map(trade => ({
+            order: trade.orderId || "N/A", 
+            amount: trade.price || 0,
+            baseQty: trade.qty || 0,
+            fee: {
+                currency: trade.commissionAsset || "N/A",
+                cost: Math.abs(trade.commission) || 0,
+            },
+            error: trade.error || null
+        }));
+    
+        return ccxtTrades;
+      } catch (error) {
+          // WARN LOG...
+          await sendLogs.exchangeWarn.warn("Failed To Format The Response", endPoint, this.userName);
+          console.warn("Error Fetching Order Details!", error.message);
+          throw new error;
       }
-  
-      const ccxtTrades = tradesArray.map(trade => ({
-          order: trade.orderId || "N/A", 
-          amount: trade.price || 0,
-          baseQty: trade.qty || 0,
-          fee: {
-              currency: trade.commissionAsset || "N/A",
-              cost: Math.abs(trade.commission) || 0,
-          },
-          error: trade.error || null
-      }));
-  
-      return ccxtTrades;
   }
 
 
@@ -377,7 +390,7 @@ class BinanceService{
 
                     //LOGS AN ERROR...
             if (Array.isArray(response.data) && response.data.length === 0) {
-              await sendLog("Binance-Service", "Klines-API", "ERROR", `${endPoint}`, "No Klines data found.");
+              await sendLogs.exchangeError.error("No Klines data found", endPoint, this.userName);
               return; // Exit early if there is no data
             }
 
@@ -393,11 +406,11 @@ class BinanceService{
             klines.sort((a, b) => a[0] - b[0]); //Sorted By timestamp
         
             //SUCCESS LOG...
-            await sendLog("Binance-Service", "Klines", "INFO", `${endPoint}`, 'Operation Succesfull!');
+            await sendLogs.exchangeInfo.info( 'Operation Succesfull!', endPoint, this.userName);
             return klines;
           } catch (error) {
             //LOGS AN ERROR...
-            await sendLog("Binance-Service", 'Klines', 'ERROR', `${endPoint}`, `${error.message}`);
+            await sendLogs.exchangeError.error( `${error.message}`, endPoint, this.userName);
             console.warn("Error Fetching Klines!", error);
             throw new error;
           }
@@ -407,4 +420,3 @@ class BinanceService{
 
 
 export default BinanceService;
-
