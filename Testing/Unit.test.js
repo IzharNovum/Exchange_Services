@@ -1,4 +1,4 @@
-import { Auth, Payment } from "../Stock/Stock.js";
+import { Auth, Payment } from "../StockHero_Components/Stock.js";
 import sendLogs from "../Log_System/sendLogs.js";
 
 
