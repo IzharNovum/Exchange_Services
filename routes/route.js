@@ -3,6 +3,7 @@ import OkexService from "../Services/Okex_Service.js";
 import HuobiService from "../Services/Huobi_Service.js"
 import BinanceService from "../Services/Binance_Service.js";
 import sendLogs from "../Log_System/sendLogs.js";
+import TokoCrypto from "../Services/TokoCrypto.js";
 
 const router = express.Router();
 
@@ -281,6 +282,179 @@ const routes = [
             }
         }},
 
+
+                            //ROUTES FOR BINANCE SERVICES......
+
+        { path: "/Binance-Service/balance", handler: async (req, res) => {
+            try {
+                const order = await BinanceService.fetchBalanceOnExchange();
+                res.json(order);
+            } catch (error) {
+                //LOG ERROR...
+                await sendLogs.exchangeDebug.debug(error.message, "/Binance-Service/balance", userName);
+                console.error("Error fetching balance details:", error.message);
+                res.status(500).json({ error: "Failed to fetch balance details" });
+            }
+        }},
+
+        { path: "/Binance-Service/place-order", handler: async (req, res) => {
+            try {
+                const order = await BinanceService.placeOrderOnExchange();
+                res.json(order);
+            } catch (error) {
+                //LOG ERROR...
+                await sendLogs.exchangeDebug.debug(error.message, "/Binance-Service/place-order", userName);
+                console.error("Error placing an order:", error.message);
+                res.status(500).json({ error: "Failed to place an order" });
+            }
+        }},
+
+        { path: "/Binance-Service/pending-order", handler: async (req, res) => {
+            try {
+                const order = await BinanceService.pendingOrders();
+                res.json(order);
+            } catch (error) {
+                //LOG ERROR...
+                await sendLogs.exchangeDebug.debug(error.message, "/Binance-Service/pending-order", userName);
+                console.error("Error fetching pending order details:", error.message);
+                res.status(500).json({ error: "Failed to fetch pending order details" });
+            }
+        }},
+
+        { path: "/Binance-Service/cancel-order", handler: async (req, res) => {
+            try {
+                const order = await BinanceService.cancelOrderFromExchange();
+                res.json(order);
+            } catch (error) {
+                //LOG ERROR...
+                await sendLogs.exchangeDebug.debug(error.message, "/Binance-Service/cancel-order", userName);
+                console.error("Error cancelling order:", error.message);
+                res.status(500).json({ error: "Failed to cancel an order" });
+            }
+        }},
+
+        { path: "/Binance-Service/fetch-order", handler: async (req, res) => {
+            try {
+                const order = await BinanceService.fetchOrderFromExchange();
+                res.json(order);
+            } catch (error) {
+                //LOG ERROR...
+                await sendLogs.exchangeDebug.debug(error.message, "/Binance-Service/fetch-order", userName);
+                console.error("Error fetching order details:", error.message);
+                res.status(500).json({ error: "Failed to fetch order details" });
+            }
+        }},
+
+        { path: "/Binance-Service/trades", handler: async (req, res) => {
+            try {
+                const order = await BinanceService.loadTradesForClosedOrder();
+                res.json(order);
+            } catch (error) {
+                //LOG ERROR...
+                await sendLogs.exchangeDebug.debug(error.message, "/Binance-Service/trades", userName);
+                console.error("Error fetching trades:", error.message);
+                res.status(500).json({ error: "Failed to fetch trades" });
+            }
+        }},
+
+        { path: "/Binance-Service/klines", handler: async (req, res) => {
+            try {
+                const order = await BinanceService.fetchKlines();
+                res.json(order);
+            } catch (error) {
+                //LOG ERROR...
+                await sendLogs.exchangeDebug.debug(error.message, "/Binance-Service/Klines", userName);
+                console.error("Error fetching Kline details:", error.message);
+                res.status(500).json({ error: "Failed to fetch Kline details" });
+            }
+        }},
+
+
+                    //ROUTES FOR TOKO-CRYPTO SERVICES......
+
+                    { path: "/Toko-Service/balance", handler: async (req, res) => {
+                        try {
+                            const order = await TokoCrypto.fetchBalanceOnExchange();
+                            res.json(order);
+                        } catch (error) {
+                            //LOG ERROR...
+                            await sendLogs.exchangeDebug.debug(error.message, "/Toko-Service/balance", userName);
+                            console.error("Error fetching balance details:", error.message);
+                            res.status(500).json({ error: "Failed to fetch balance details" });
+                        }
+                    }},
+            
+                    { path: "/Toko-Service/place-order", handler: async (req, res) => {
+                        try {
+                            const order = await TokoCrypto.placeOrderOnExchange();
+                            res.json(order);
+                        } catch (error) {
+                            //LOG ERROR...
+                            await sendLogs.exchangeDebug.debug(error.message, "/Toko-Service/place-order", userName);
+                            console.error("Error placing an order:", error.message);
+                            res.status(500).json({ error: "Failed to place an order" });
+                        }
+                    }},
+            
+                    { path: "/Toko-Service/pending-order", handler: async (req, res) => {
+                        try {
+                            const order = await TokoCrypto.pendingOrders();
+                            res.json(order);
+                        } catch (error) {
+                            //LOG ERROR...
+                            await sendLogs.exchangeDebug.debug(error.message, "/Toko-Service/pending-order", userName);
+                            console.error("Error fetching pending order details:", error.message);
+                            res.status(500).json({ error: "Failed to fetch pending order details" });
+                        }
+                    }},
+            
+                    { path: "/Toko-Service/cancel-order", handler: async (req, res) => {
+                        try {
+                            const order = await TokoCrypto.cancelOrderFromExchange();
+                            res.json(order);
+                        } catch (error) {
+                            //LOG ERROR...
+                            await sendLogs.exchangeDebug.debug(error.message, "/Toko-Service/cancel-order", userName);
+                            console.error("Error cancelling order:", error.message);
+                            res.status(500).json({ error: "Failed to cancel an order" });
+                        }
+                    }},
+            
+                    { path: "/Toko-Service/fetch-order", handler: async (req, res) => {
+                        try {
+                            const order = await TokoCrypto.fetchOrderFromExchange();
+                            res.json(order);
+                        } catch (error) {
+                            //LOG ERROR...
+                            await sendLogs.exchangeDebug.debug(error.message, "/Toko-Service/fetch-order", userName);
+                            console.error("Error fetching order details:", error.message);
+                            res.status(500).json({ error: "Failed to fetch order details" });
+                        }
+                    }},
+            
+                    { path: "/Toko-Service/trades", handler: async (req, res) => {
+                        try {
+                            const order = await TokoCrypto.loadTradesForClosedOrder();
+                            res.json(order);
+                        } catch (error) {
+                            //LOG ERROR...
+                            await sendLogs.exchangeDebug.debug(error.message, "/Toko-Service/trades", userName);
+                            console.error("Error fetching trades:", error.message);
+                            res.status(500).json({ error: "Failed to fetch trades" });
+                        }
+                    }},
+            
+                    { path: "/Toko-Service/klines", handler: async (req, res) => {
+                        try {
+                            const order = await TokoCrypto.fetchKlines();
+                            res.json(order);
+                        } catch (error) {
+                            //LOG ERROR...
+                            await sendLogs.exchangeDebug.debug(error.message, "/Toko-Service/Klines", userName);
+                            console.error("Error fetching Kline details:", error.message);
+                            res.status(500).json({ error: "Failed to fetch Kline details" });
+                        }
+                    }},
 
 
 ];

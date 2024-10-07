@@ -185,7 +185,6 @@ class BinanceService{
       });
 
       const response = await this.callExchangeAPI(endPoint, params, "POST"); 
-      // console.warn("Response Is Not OK!", response);
 
       if(response.status !== 200){
         const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
