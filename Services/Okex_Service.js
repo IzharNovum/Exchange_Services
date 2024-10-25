@@ -121,7 +121,7 @@ class OkexService extends NonCcxtExchangeService{
             method = method.toUpperCase();
 
 
-              const options = {
+              const options = { 
                 method,
                 headers,
                 ...(method === "GET" ? {} : { body: JSON.stringify(params) }),  
@@ -155,7 +155,7 @@ static async fetchBalanceFromExchange() {
 
     if (response?.code > 0) {
       const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
-      await sendLogs.exchangeError.error("No Response!", endPoint, this.userName);
+      await sendLogs.exchangeError.error(msg ?? "No Response!", endPoint, this.userName);
       throw new Error(msg);
     }
 

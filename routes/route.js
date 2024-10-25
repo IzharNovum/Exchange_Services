@@ -3,7 +3,15 @@ import OkexService from "../Services/Okex_Service.js";
 import HuobiService from "../Services/Huobi_Service.js"
 import BinanceService from "../Services/Binance_Service.js";
 import sendLogs from "../Log_System/sendLogs.js";
-import TokoCrypto from "../Services/TokoCrypto.js";
+import TokoCrypto from "../Remaining_Services/TokoCrypto.js";
+import kucoin_Service from "../Remaining_Services/Kucoin_Service.js";
+import Kucoin_Future from "../Remaining_Services/Kucoin_Future.js";
+import Kraken from "../Remaining_Services/Kraken_Service.js";
+import Crypto from "../Remaining_Services/Crypto_Service.js";
+import Indodax_Services from "../Remaining_Services/Indodax_Service.js";
+import BitFinex_Service from "../Remaining_Services/BitFinex_Service.js";
+import Gate_Service from "../Remaining_Services/Gate_Service.js";
+import CoinBase_Service from "../Remaining_Services/CoinBase.js";
 
 const router = express.Router();
 
@@ -457,6 +465,606 @@ const routes = [
                     }},
 
 
+
+
+                                       //ROUTES FOR KUCOIN SERVICES......
+
+                                       { path: "/Kucoin-Service/balance", handler: async (req, res) => {
+                                        try {
+                                            const order = await kucoin_Service.fetchBalanceOnExchange();
+                                            res.json(order);
+                                        } catch (error) {
+                                            console.error("Error fetching balance details:", error.message);
+                                            res.status(500).json({ error: "Failed to fetch balance details" });
+                                        }
+                                    }},
+                            
+                                    { path: "/Kucoin-Service/place-order", handler: async (req, res) => {
+                                        try {
+                                            const order = await kucoin_Service.placeOrderOnExchange();
+                                            res.json(order);
+                                        } catch (error) {
+                                            console.error("Error placing an order:", error.message);
+                                            res.status(500).json({ error: "Failed to place an order" });
+                                        }
+                                    }},
+                            
+                                    { path: "/Kucoin-Service/pending-order", handler: async (req, res) => {
+                                        try {
+                                            const order = await kucoin_Service.pendingOrders();
+                                            res.json(order);
+                                        } catch (error) {
+                                            console.error("Error fetching pending order details:", error.message);
+                                            res.status(500).json({ error: "Failed to fetch pending order details" });
+                                        }
+                                    }},
+                            
+                                    { path: "/Kucoin-Service/cancel-order", handler: async (req, res) => {
+                                        try {
+                                            const order = await kucoin_Service.cancelOrderFromExchange();
+                                            res.json(order);
+                                        } catch (error) {
+                                            console.error("Error cancelling order:", error.message);
+                                            res.status(500).json({ error: "Failed to cancel an order" });
+                                        }
+                                    }},
+                            
+                                    { path: "/Kucoin-Service/fetch-order", handler: async (req, res) => {
+                                        try {
+                                            const order = await kucoin_Service.fetchOrderFromExchange();
+                                            res.json(order);
+                                        } catch (error) {
+                                            console.error("Error fetching order details:", error.message);
+                                            res.status(500).json({ error: "Failed to fetch order details" });
+                                        }
+                                    }},
+                            
+                                    { path: "/Kucoin-Service/trades", handler: async (req, res) => {
+                                        try {
+                                            const order = await kucoin_Service.loadTradesForClosedOrder();
+                                            res.json(order);
+                                        } catch (error) {
+                                            console.error("Error fetching trades:", error.message);
+                                            res.status(500).json({ error: "Failed to fetch trades" });
+                                        }
+                                    }},
+                            
+                                    { path: "/Kucoin-Service/klines", handler: async (req, res) => {
+                                        try {
+                                            const order = await kucoin_Service.fetchKlines();
+                                            res.json(order);
+                                        } catch (error) {
+                                            console.error("Error fetching Kline details:", error.message);
+                                            res.status(500).json({ error: "Failed to fetch Kline details" });
+                                        }
+                                    }},
+
+
+                                    //Routes For Kucoin Future.
+                                    { path: "/Kucoin-Future/place-order", handler: async (req, res) => {
+                                        try {
+                                            const order = await Kucoin_Future.placeOrderOnExchange();
+                                            res.json(order);
+                                        } catch (error) {
+                                            console.error("Error placing an order:", error.message);
+                                            res.status(500).json({ error: "Failed to place an order" });
+                                        }
+                                    }},
+                            
+                                    { path: "/Kucoin-Future/pending-order", handler: async (req, res) => {
+                                        try {
+                                            const order = await Kucoin_Future.pendingOrders();
+                                            res.json(order);
+                                        } catch (error) {
+                                            console.error("Error fetching pending order details:", error.message);
+                                            res.status(500).json({ error: "Failed to fetch pending order details" });
+                                        }
+                                    }},
+                            
+                                    { path: "/Kucoin-Future/cancel-order", handler: async (req, res) => {
+                                        try {
+                                            const order = await Kucoin_Future.cancelOrderFromExchange();
+                                            res.json(order);
+                                        } catch (error) {
+                                            console.error("Error cancelling order:", error.message);
+                                            res.status(500).json({ error: "Failed to cancel an order" });
+                                        }
+                                    }},
+                            
+                                    { path: "/Kucoin-Future/fetch-order", handler: async (req, res) => {
+                                        try {
+                                            const order = await Kucoin_Future.fetchOrderFromExchange();
+                                            res.json(order);
+                                        } catch (error) {
+                                            console.error("Error fetching order details:", error.message);
+                                            res.status(500).json({ error: "Failed to fetch order details" });
+                                        }
+                                    }},
+                            
+                                    { path: "/Kucoin-Future/trades", handler: async (req, res) => {
+                                        try {
+                                            const order = await Kucoin_Future.loadTradesForClosedOrder();
+                                            res.json(order);
+                                        } catch (error) {
+                                            console.error("Error fetching trades:", error.message);
+                                            res.status(500).json({ error: "Failed to fetch trades" });
+                                        }
+                                    }},
+                            
+                                    { path: "/Kucoin-Future/klines", handler: async (req, res) => {
+                                        try {
+                                            const order = await Kucoin_Future.fetchKlines();
+                                            res.json(order);
+                                        } catch (error) {
+                                            console.error("Error fetching Kline details:", error.message);
+                                            res.status(500).json({ error: "Failed to fetch Kline details" });
+                                        }
+                                    }},
+
+
+
+
+                                        //Routes For Indodax Service.
+                                        { path: "/Indo-Service/balance", handler: async (req, res) => {
+                                            try {
+                                                const order = await Indodax_Services.fetchBalanceOnExchange();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error Fetching balance:", error.message);
+                                                res.status(500).json({ error: "Failed to Fetching balance:" });
+                                            }
+                                        }},
+
+                                        { path: "/Indo-Service/place-order", handler: async (req, res) => {
+                                            try {
+                                                const order = await Indodax_Services.placeOrderOnExchange();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error placing an order:", error.message);
+                                                res.status(500).json({ error: "Failed to place an order" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Indo-Service/pending-order", handler: async (req, res) => {
+                                            try {
+                                                const order = await Indodax_Services.pendingOrders();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error fetching pending order details:", error.message);
+                                                res.status(500).json({ error: "Failed to fetch pending order details" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Indo-Service/cancel-order", handler: async (req, res) => {
+                                            try {
+                                                const order = await Indodax_Services.cancelOrderFromExchange();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error cancelling order:", error.message);
+                                                res.status(500).json({ error: "Failed to cancel an order" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Indo-Service/fetch-order", handler: async (req, res) => {
+                                            try {
+                                                const order = await Indodax_Services.fetchOrderFromExchange();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error fetching order details:", error.message);
+                                                res.status(500).json({ error: "Failed to fetch order details" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Indo-Service/trades", handler: async (req, res) => {
+                                            try {
+                                                const order = await Indodax_Services.loadTradesForClosedOrder();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error fetching trades:", error.message);
+                                                res.status(500).json({ error: "Failed to fetch trades" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Indo-Service/klines", handler: async (req, res) => {
+                                            try {
+                                                const order = await Indodax_Services.fetchKlines();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error fetching Kline details:", error.message);
+                                                res.status(500).json({ error: "Failed to fetch Kline details" });
+                                            }
+                                        }},
+
+
+                                        //Routes For Kraken Service.
+                                        { path: "/Kraken-Service/balance", handler: async (req, res) => {
+                                            try {
+                                                const order = await Kraken.fetchBalanceOnExchange();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error Fetching balance:", error.message);
+                                                res.status(500).json({ error: "Failed to Fetching balance:" });
+                                            }
+                                        }},
+
+                                        { path: "/Kraken-Service/place-order", handler: async (req, res) => {
+                                            try {
+                                                const order = await Kraken.placeOrderOnExchange();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error placing an order:", error.message);
+                                                res.status(500).json({ error: "Failed to place an order" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Kraken-Service/pending-order", handler: async (req, res) => {
+                                            try {
+                                                const order = await Kraken.pendingOrders();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error fetching pending order details:", error.message);
+                                                res.status(500).json({ error: "Failed to fetch pending order details" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Kraken-Service/cancel-order", handler: async (req, res) => {
+                                            try {
+                                                const order = await Kraken.cancelOrderFromExchange();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error cancelling order:", error.message);
+                                                res.status(500).json({ error: "Failed to cancel an order" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Kraken-Service/fetch-order", handler: async (req, res) => {
+                                            try {
+                                                const order = await Kraken.fetchOrderFromExchange();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error fetching order details:", error.message);
+                                                res.status(500).json({ error: "Failed to fetch order details" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Kraken-Service/trades", handler: async (req, res) => {
+                                            try {
+                                                const order = await Kraken.loadTradesForClosedOrder();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error fetching trades:", error.message);
+                                                res.status(500).json({ error: "Failed to fetch trades" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Kraken-Service/klines", handler: async (req, res) => {
+                                            try {
+                                                const order = await Kraken.fetchKlines();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error fetching Kline details:", error.message);
+                                                res.status(500).json({ error: "Failed to fetch Kline details" });
+                                            }
+                                        }},
+
+
+                                        //Routes For Kraken Service.
+                                        { path: "/Gate-Service/balance", handler: async (req, res) => {
+                                            try {
+                                                const order = await Gate_Service.fetchBalanceOnExchange();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error Fetching balance:", error.message);
+                                                res.status(500).json({ error: "Failed to Fetching balance:" });
+                                            }
+                                        }},
+
+                                        { path: "/Gate-Service/place-order", handler: async (req, res) => {
+                                            try {
+                                                const order = await Gate_Service.placeOrderOnExchange();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error placing an order:", error.message);
+                                                res.status(500).json({ error: "Failed to place an order" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Gate-Service/pending-order", handler: async (req, res) => {
+                                            try {
+                                                const order = await Gate_Service.pendingOrders();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error fetching pending order details:", error.message);
+                                                res.status(500).json({ error: "Failed to fetch pending order details" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Gate-Service/cancel-order", handler: async (req, res) => {
+                                            try {
+                                                const order = await Gate_Service.cancelOrderFromExchange();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error cancelling order:", error.message);
+                                                res.status(500).json({ error: "Failed to cancel an order" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Gate-Service/fetch-order", handler: async (req, res) => {
+                                            try {
+                                                const order = await Gate_Service.fetchOrderFromExchange();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error fetching order details:", error.message);
+                                                res.status(500).json({ error: "Failed to fetch order details" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Gate-Service/trades", handler: async (req, res) => {
+                                            try {
+                                                const order = await Gate_Service.loadTradesForClosedOrder();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error fetching trades:", error.message);
+                                                res.status(500).json({ error: "Failed to fetch trades" });
+                                            }
+                                        }},
+                                
+                                        { path: "/Gate-Service/klines", handler: async (req, res) => {
+                                            try {
+                                                const order = await Gate_Service.fetchKlines();
+                                                res.json(order);
+                                            } catch (error) {
+                                                console.error("Error fetching Kline details:", error.message);
+                                                res.status(500).json({ error: "Failed to fetch Kline details" });
+                                            }
+                                        }},
+
+
+                                            //Routes For BitFinex Service.
+                                            { path: "/BitFinex-Service/balance", handler: async (req, res) => {
+                                                try {
+                                                    const order = await BitFinex_Service.fetchBalanceOnExchange();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error Fetching balance:", error.message);
+                                                    res.status(500).json({ error: "Failed to Fetching balance:" });
+                                                }
+                                            }},
+    
+                                            { path: "/BitFinex-Service/place-order", handler: async (req, res) => {
+                                                try {
+                                                    const order = await BitFinex_Service.placeOrderOnExchange();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error placing an order:", error.message);
+                                                    res.status(500).json({ error: "Failed to place an order" });
+                                                }
+                                            }},
+                                    
+                                            { path: "/BitFinex-Service/pending-order", handler: async (req, res) => {
+                                                try {
+                                                    const order = await BitFinex_Service.pendingOrders();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error fetching pending order details:", error.message);
+                                                    res.status(500).json({ error: "Failed to fetch pending order details" });
+                                                }
+                                            }},
+                                    
+                                            { path: "/BitFinex-Service/cancel-order", handler: async (req, res) => {
+                                                try {
+                                                    const order = await BitFinex_Service.cancelOrderFromExchange();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error cancelling order:", error.message);
+                                                    res.status(500).json({ error: "Failed to cancel an order" });
+                                                }
+                                            }},
+                                            
+                                            { path: "/BitFinex-Service/fetch-order", handler: async (req, res) => {
+                                                try {
+                                                    const order = await BitFinex_Service.fetchOrderFromExchange();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error fetching order details:", error.message);
+                                                    res.status(500).json({ error: "Failed to fetch order details" });
+                                                }
+                                            }},
+                                    
+                                            { path: "/BitFinex-Service/trades", handler: async (req, res) => {
+                                                try {
+                                                    const order = await BitFinex_Service.loadTradesForClosedOrder();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error fetching trades:", error.message);
+                                                    res.status(500).json({ error: "Failed to fetch trades" });
+                                                }
+                                            }},
+                                    
+                                            { path: "/BitFinex-Service/klines", handler: async (req, res) => {
+                                                try {
+                                                    const order = await BitFinex_Service.fetchKlines();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error fetching Kline details:", error.message);
+                                                    res.status(500).json({ error: "Failed to fetch Kline details" });
+                                                }
+                                            }},
+
+
+
+
+                                            //Routes For CoinBase_Service.
+
+                                            { path: "/Coinbase-Service/account", handler: async (req, res) => {
+                                                try {
+                                                    const order = await CoinBase_Service.FetchAccount();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error Fetching Accout:", error.message);
+                                                    res.status(500).json({ error: "Failed to Fetching Account:" });
+                                                }
+                                            }},
+                                            { path: "/Coinbase-Service/balance", handler: async (req, res) => {
+                                                try {
+                                                    const order = await CoinBase_Service.fetchBalanceOnExchange();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error Fetching balance:", error.message);
+                                                    res.status(500).json({ error: "Failed to Fetching balance:" });
+                                                }
+                                            }},
+    
+                                            { path: "/Coinbase-Service/place-order", handler: async (req, res) => {
+                                                try {
+                                                    const order = await CoinBase_Service.placeOrderOnExchange();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error placing an order:", error.message);
+                                                    res.status(500).json({ error: "Failed to place an order" });
+                                                }
+                                            }},
+                                    
+                                            { path: "/Coinbase-Service/pending-order", handler: async (req, res) => {
+                                                try {
+                                                    const order = await CoinBase_Service.pendingOrders();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error fetching pending order details:", error.message);
+                                                    res.status(500).json({ error: "Failed to fetch pending order details" });
+                                                }
+                                            }},
+                                    
+                                            { path: "/Coinbase-Service/cancel-order", handler: async (req, res) => {
+                                                try {
+                                                    const order = await CoinBase_Service.cancelOrderFromExchange();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error cancelling order:", error.message);
+                                                    res.status(500).json({ error: "Failed to cancel an order" });
+                                                }
+                                            }},
+                                    
+                                            { path: "/Coinbase-Service/fetch-order", handler: async (req, res) => {
+                                                try {
+                                                    const order = await CoinBase_Service.fetchOrderFromExchange();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error fetching order details:", error.message);
+                                                    res.status(500).json({ error: "Failed to fetch order details" });
+                                                }
+                                            }},
+                                    
+                                            { path: "/Coinbase-Service/trades", handler: async (req, res) => {
+                                                try {
+                                                    const order = await CoinBase_Service.loadTradesForClosedOrder();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error fetching trades:", error.message);
+                                                    res.status(500).json({ error: "Failed to fetch trades" });
+                                                }
+                                            }},
+                                    
+                                            { path: "/Coinbase-Service/klines", handler: async (req, res) => {
+                                                try {
+                                                    const order = await CoinBase_Service.fetchKlines();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error fetching Kline details:", error.message);
+                                                    res.status(500).json({ error: "Failed to fetch Kline details" });
+                                                }
+                                            }},
+
+
+
+
+
+
+                                            //Testing for Crypto..
+                                            { path: "/crypto/checking", handler: async (req, res) => {
+                                                try {
+                                                    const order = await Crypto.fetchOrderFromExchange();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error Kraken", error.message);
+                                                    res.status(500).json({ error: "Error Kraken ISE", error });
+                                                }
+                                            }},
+
+
+                                            //Routes For BitFinex Service.
+                                            { path: "/crypto-Service/balance", handler: async (req, res) => {
+                                                try {
+                                                    const order = await Crypto.fetchBalanceOnExchange();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error Fetching balance:", error.message);
+                                                    res.status(500).json({ error: "Failed to Fetching balance:" });
+                                                }
+                                            }},
+    
+                                            { path: "/crypto-Service/place-order", handler: async (req, res) => {
+                                                try {
+                                                    const order = await Crypto.placeOrderOnExchange();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error placing an order:", error.message);
+                                                    res.status(500).json({ error: "Failed to place an order" });
+                                                }
+                                            }},
+                                    
+                                            { path: "/crypto-Service/pending-order", handler: async (req, res) => {
+                                                try {
+                                                    const order = await Crypto.pendingOrders();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error fetching pending order details:", error.message);
+                                                    res.status(500).json({ error: "Failed to fetch pending order details" });
+                                                }
+                                            }},
+                                    
+                                            { path: "/crypto-Service/cancel-order", handler: async (req, res) => {
+                                                try {
+                                                    const order = await Crypto.cancelOrderFromExchange();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error cancelling order:", error.message);
+                                                    res.status(500).json({ error: "Failed to cancel an order" });
+                                                }
+                                            }},
+                                    
+                                            { path: "/crypto-Service/fetch-order", handler: async (req, res) => {
+                                                try {
+                                                    const order = await Crypto.fetchOrderFromExchange();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error fetching order details:", error.message);
+                                                    res.status(500).json({ error: "Failed to fetch order details" });
+                                                }
+                                            }},
+                                    
+                                            { path: "/crypto-Service/trades", handler: async (req, res) => {
+                                                try {
+                                                    const order = await Crypto.loadTradesForClosedOrder();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error fetching trades:", error.message);
+                                                    res.status(500).json({ error: "Failed to fetch trades" });
+                                                }
+                                            }},
+                                    
+                                            { path: "/crypto-Service/klines", handler: async (req, res) => {
+                                                try {
+                                                    const order = await Crypto.fetchKlines();
+                                                    res.json(order);
+                                                } catch (error) {
+                                                    console.error("Error fetching Kline details:", error.message);
+                                                    res.status(500).json({ error: "Failed to fetch Kline details" });
+                                                }
+                                            }},
+
+
+                
 ];
 
 

@@ -151,7 +151,7 @@ class huobiExchange{
                 console.error("Response Is Not OK!", response["err-msg"]);
                 throw new Error(`API Error: ${response["err-msg"]}`);
             }
-
+            
             //SUCCESS LOG...
             await sendLogs.exchangeInfo.info('Operation Successfull!', endPoint, this.userName);
             return response;
@@ -174,7 +174,7 @@ class huobiExchange{
                 //LOGS AN ERROR...
                 await sendLogs.exchangeError.error( "No Response!", endPoint, this.userName);
                 console.warn("Response Is Not OK!", response);
-              }
+              } 
                 let result = { coins: [] };
 
                 if (response?.data?.list && Array.isArray(response.data.list)) {
@@ -199,7 +199,7 @@ class huobiExchange{
                                 coin: coinInfo.currency,
                                 type: coinInfo.type,
                                 free: availBal,
-                                used: frozenBal,
+                                used: frozenBal,    
                                 total: availBal + frozenBal,
                             });
                             hasValidCoin = true; //flag if there's any valid cois for trading!
@@ -221,7 +221,7 @@ class huobiExchange{
         await sendLogs.exchangeInfo.info("Successfully Fetched Balance!", endPoint, this.userName);
         return result;
         } catch (error) {
-        //LOGS AN ERROR...
+        //LOGS AN ERROR...  
         await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
         console.error("Error fetching balance:", error.message);
         throw error;
