@@ -320,46 +320,6 @@ class Kraken{
     
 
     // https://docs.kraken.com/api/docs/rest-api/get-ohlc-data
-    // static async fetchKlines() {
-    //     const url = "https://api.kraken.com/0/public/OHLC";
-    //     try {
-    //         const params = new URLSearchParams({
-    //             pair: "BTCUSDT",
-    //             interval: 1
-    //         });
-    
-    //         // Append the query string to the URL
-    //         const fullUrl = `${url}?${params.toString()}`;
-            
-    //         const data = await fetch(fullUrl);
-    //         const response = await data.json();
-
-    //         if (!response.result || !Array.isArray(response.result)) {
-    //             const errMgs = response.msg ?? JSON.stringify(response);
-    //             return errMgs;
-    //         }
-            
-    //         // console.log("Success Response From API:", response);
-
-    //         const formattedKlines = response.result.XBTUSDT.map(kline => {
-    //         return {
-    //         time: kline[0],
-    //         open: kline[1],
-    //         high: kline[2],
-    //         low: kline[3],
-    //         close: kline[4],
-    //         volume: kline[5] // Assuming volume is at index 5
-    //         };
-    //         });
-                
-    //         formattedKlines.sort((a, b) => a.time - b.time); // Sorted By timestamp
-            
-    //         return formattedKlines;
-    //     } catch (error) {
-    //         console.error("Error Fetching Klines", error);
-    //         throw error;
-    //     }
-    // }
     static async fetchKlines() {
         const url = "https://api.kraken.com/0/public/OHLC";
 
