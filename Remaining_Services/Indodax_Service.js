@@ -144,14 +144,14 @@ class Indodax_Services{
     }
 
     // PLACE ORDER...
-    static async placeOrderOnExchange(){
+    static async placeOrderOnExchange(pair, type, price, idr){
         const endPoint = "/trade";
         try {
             const params = this.buildQueryParams({
-                pair:"btc_idr",
-                type:"buy",
-                price: "54000",
-                idr: "34302"    
+                pair: pair,
+                type: type,
+                price: price,
+                idr: idr    
             })
             const response = await this.callExchangeAPI(endPoint, params);
             console.log("Response From API:", response);
@@ -204,13 +204,13 @@ class Indodax_Services{
     }
 
     // CANCEL ORDER...
-    static async cancelOrderFromExchange(){
+    static async cancelOrderFromExchange(pair, order_id, type){
         const endPoint = "/cancelOrder";
         try {
             const params = this.buildQueryParams({
-                pair:"btc_idr",
-                order_id: "11574",
-                type: "buy",
+                pair: pair,
+                order_id: order_id,
+                type: type,
             })
             const response = await this.callExchangeAPI(endPoint, params);
             if(response.success !== 1){
@@ -228,12 +228,12 @@ class Indodax_Services{
     }
 
     // ORDER DETAILS...
-    static async fetchOrderFromExchange(){
+    static async fetchOrderFromExchange(pair, order_id){
         const endPoint = "/getOrder";
         try {
             const params =  this.buildQueryParams({
-                pair:"btc_idr",
-                order_id:"94425"
+                pair: pair,
+                order_id: order_id
             })
             const response = await this.callExchangeAPI(endPoint, params);
             if(response.success !== 1){
@@ -270,19 +270,19 @@ class Indodax_Services{
     
 
         // TRADES HISTORY
-    static async loadTradesForClosedOrder(){
+    static async loadTradesForClosedOrder(pair){
         const endPoint = "/tradeHistory";
         try {
             const params = this.buildQueryParams({
-                pair: "btc_idr"
+                pair: pair
             })
             const response = await this.callExchangeAPI(endPoint, params);
+            console.log("resposane from API:", response);
 
             if(response.success !== 1){
                 const errMsg = response.error ?? response.msg ?? JSON.stringify(response);
                 return errMsg;
             };
-            // console.log("resposane from API:", response);
 
             return this.convertTradesToCcxtFormat(response ?? {});
         } catch (error) {
@@ -347,16 +347,16 @@ class Indodax_Services{
     
 
     // https://github.com/btcid/indodax-official-api-docs/blob/master/Public-RestAPI.md#server-time
-    static async fetchKlines() {
+    static async fetchKlines(from, to, tf, symbol) {
         const endPoint = "/tradingview/history_v2";
     
         try {
         const uri = "https://indodax.com";
         const params = new URLSearchParams({
-            from: "1698742200", //dont need to sort the
-            to: "1699347009",   
-            tf: "15",               
-            symbol: "BTCIDR"    
+            from: from, //dont need to sort the
+            to: to,   
+            tf: tf,               
+            symbol: symbol 
         });
 
             const url = `${uri}${endPoint}?${params.toString()}`;

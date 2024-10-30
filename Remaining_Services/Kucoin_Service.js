@@ -68,11 +68,11 @@ static buidlQueryParams(params){
     const Signature = crypto.createHmac("sha256", Secret_key).update(presigned).digest("base64");
 
     return  {
-        "KC-API-KEY": API_Key,
-        "KC-API-SIGN": Signature,
-        "KC-API-TIMESTAMP": timestamp,
-        "KC-API-PASSPHRASE": passphrase,
-        "KC-API-KEY-VERSION": Version,
+        "KC-API-KEY":API_Key,
+        "KC-API-SIGN":Signature,
+        "KC-API-TIMESTAMP":timestamp,
+        "KC-API-PASSPHRASE":passphrase,
+        "KC-API-KEY-VERSION":Version,
         "Content-Type": "application/json",
     }
 }
@@ -157,15 +157,15 @@ static buidlQueryParams(params){
     }
 
     // https://www.kucoin.com/docs/rest/spot-trading/orders/place-order
-    static async placeOrderOnExchange(){
+    static async placeOrderOnExchange(clientOid, side, symbol, price, size){
         const endPoint = "/api/v1/orders";
         try {
             const params = this.buidlQueryParams({
-                clientOid : "382932892",
-                side: "sell",
-                symbol : "BTC-USDT",
-                price : "23292",
-                size: 1
+                clientOid : clientOid,
+                side: side,
+                symbol : symbol,
+                price : price,
+                size: size
             })
             const response = await this.callExchangeAPI(endPoint, params, "POST");
 
@@ -223,8 +223,7 @@ static buidlQueryParams(params){
 
 
     // https://www.kucoin.com/docs/rest/spot-trading/orders/cancel-order-by-orderid
-    static async cancelOrderFromExchange(){
-        const orderId = "5bd6e9286d99522a52e458de";
+    static async cancelOrderFromExchange(orderId){
         const endPoint = `/api/v1/orders/${orderId}`;
         try {
 
@@ -246,9 +245,8 @@ static buidlQueryParams(params){
 
 
     // https://www.kucoin.com/docs/rest/spot-trading/orders/get-order-details-by-orderid
-    static async fetchOrderFromExchange(){
-        const orderId = "5c35c02703aa673ceec2a168";
-        const endPoint =    `/api/v1/orders/${orderId}`;
+    static async fetchOrderFromExchange(orderId){
+        const endPoint = `/api/v1/orders/${orderId}`;
         try {
             const response = await this.callExchangeAPI(endPoint, {});
 
@@ -331,12 +329,12 @@ static buidlQueryParams(params){
 
 
     // https://www.kucoin.com/docs/rest/spot-trading/market-data/get-klines
-    static async fetchKlines(){
+    static async fetchKlines(symbol, type){
         const endPoint = "/api/v1/market/candles";
         try {
             const params = this.buidlQueryParams({
-                symbol : "BTC-USDT",
-                type: "1min"
+                symbol : symbol,
+                type: type
 
             })
             

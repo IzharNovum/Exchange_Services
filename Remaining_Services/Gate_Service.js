@@ -3,6 +3,7 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
+import { interval } from "date-fns";
 
 
 
@@ -36,10 +37,8 @@ class Gate_Service{
     }
 
     static async Authentication(endPoint = null, params = {}, method = "GET"){
-        const apikey = "7c016a5a4626293a43987ea8e39ee56e";
-        const secretkey = "2bca9a8e514641f6f4969c4b0a7acdfe4e17530f8e338ad6a6388062f0ac157e";
-        // const apikey = process.env.API_KEY_Gate;
-        // const secretkey = process.env.SECRECT_KEY_Gate;    
+        const apikey = process.env.API_KEY_Gate;
+        const secretkey = process.env.SECRECT_KEY_Gate;    
         const uri = this.getBaseUrl();
         const timeStamp = Math.floor(Date.now() / 1000);
         const Signed_endPoint = `/api/v4${endPoint}`;
@@ -56,7 +55,7 @@ class Gate_Service{
 
         const signedBody = crypto.createHash('sha512').update(body ?? '').digest('hex');
         const Pre_Signed = `${method}\n${Signed_endPoint}\n${queryString ?? ""}\n${signedBody}\n${timeStamp}`;
-        // console.log("presigned:", Pre_Signed);
+        console.log("presigned:", Pre_Signed);
         const signature = crypto.createHmac('sha512', secretkey).update(Pre_Signed).digest('hex');
 
 
@@ -68,6 +67,7 @@ class Gate_Service{
                 'KEY': apikey,
                 'SIGN': signature,
                 'Timestamp': timeStamp,
+                // 'Accept': 'application/json'
                 'Content-Type': 'application/json'
               },
               url
@@ -148,14 +148,14 @@ class Gate_Service{
     
 
     // https://www.gate.io/docs/developers/apiv4/en/#create-an-order
-    static async placeOrderOnExchange() {
+    static async placeOrderOnExchange(currency_pair, side, amount, price) {
         const endPoint = '/spot/orders';
         try {
             const params = this.buildQueryParams({
-                currency_pair:"BTC_USDT",
-                side: "buy",
-                amount: "0.01",
-                price: "65000",
+                currency_pair: currency_pair,
+                side: side,
+                amount: amount,
+                price: price,
     
             })
           const response = await this.callExchangeAPI(endPoint, params, "POST");
@@ -210,16 +210,14 @@ class Gate_Service{
     }
 
 
-    // NOTE : DESPITE BEING CORRECT WAY OF REQUESTING TO THE API, IT RESULT AN METHOD ERROR...//
 
     // https://www.gate.io/docs/developers/apiv4/en/#cancel-a-single-order
-    static async cancelOrderFromExchange() {
-        const order_id = "1852454420";
-        const endPoint = `/spot/orders/${order_id}`; // Correct endpoint for deletion
+    static async cancelOrderFromExchange(order_id) {
+        const endPoint = `/spot/orders/${order_id}`;
     
         try {
-            // No parameters needed for DELETE
-            const response = await this.callExchangeAPI(endPoint, {}, "POST");
+            // The method for this function is DELETE and API DOC guided to use POST. POST is not working shows an invalid method error so used GET method...
+            const response = await this.callExchangeAPI(endPoint, {}, "GET");
     
             if(!response){
                 const msg = response.message?.[0]?.sMsg ?? response.message ?? JSON.stringify(response);
@@ -234,34 +232,31 @@ class Gate_Service{
     }
     
 
-
     
     // https://www.gate.io/docs/developers/apiv4/en/#get-a-single-order
-    static async fetchOrderFromExchange(){      //Signature Error
-        const order_id = "1852454222420";
+    static async fetchOrderFromExchange(order_id) { 
         const endPoint = `/spot/orders/${order_id}`;
-        try {   
-            const params = this.buildQueryParams({
-                currency_pair: "BTC_USDT"
-            });
-
-            const response = await this.callExchangeAPI(endPoint, params);
-
+    
+        try {
+            const response = await this.callExchangeAPI(endPoint, {}) ;
+    
             console.log("Response:", response);
-
+    
             return this.createFetchOrderResultFromResponse(response);
         } catch (error) {
             console.error("Error fetching Order:", error);
             throw error;
         }
     }
+    
 
     static createFetchOrderResultFromResponse(response) {      
         const status = response.status ?? this.STATE_MAP[response.status] ?? UserOrder.STATUS_ONGOING;
         const avg = parseFloat(response.avg_deal_price) || 0;
         const filled = parseFloat(response.filled_amount) || 0;
-        const time = new Date(response.create_time_ms).toISOString();
-      
+        const time = response.create_time_ms;
+
+
         return FetchOrderResultFactory.createSuccessResult(
           status,        //order status
           avg * filled, // Total cost
@@ -335,13 +330,13 @@ class Gate_Service{
 
 
     // https://www.gate.io/docs/developers/apiv4/en/#market-candlesticks
-    static async fetchKlines(){
+    static async fetchKlines(currency_pair, interval){
         const endPoint = "/spot/candlesticks";
 
         try {
             const params = this.buildQueryParams({
-                currency_pair: "BTC_USDT",
-                interval: "10s"
+                currency_pair: currency_pair,
+                interval: interval
             })
             const response = await this.callExchangeAPI(endPoint, params);
 

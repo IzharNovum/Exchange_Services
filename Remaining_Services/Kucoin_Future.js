@@ -95,10 +95,10 @@ static buildQueryParams(params){
         }
 
         const data = await fetch(url, options);
-        // const response = await data.json();
+        const response = await data.json();
 
 
-        return data;
+        return response;
     } catch (error) {
         console.error("Error CallExchangeAPI!", error);
         throw error;
@@ -107,17 +107,17 @@ static buildQueryParams(params){
 
 
 // https://www.kucoin.com/docs/rest/futures-trading/orders/place-order
-    static async placeOrderOnExchange(){
+    static async placeOrderOnExchange(clientOid, side, symbol, leverage, price, size){
         const endPoint = "/api/v1/orders";
         try {
 
             const params = this.buildQueryParams({
-                clientOid : "5c52e11203aa677f33e493fb",
-                side : "BUY",
-                symbol: "BTS-USDT",
-                leverage: 2,
-                price: 104.00,
-                size: 1
+                clientOid : clientOid,
+                side : side,
+                symbol: symbol,
+                leverage: leverage,
+                price: price,
+                size: size
             });
 
             const response = await this.callExchangeAPI(endPoint, params, "POST");
@@ -172,8 +172,7 @@ static buildQueryParams(params){
 
 
     // https://www.kucoin.com/docs/rest/futures-trading/orders/cancel-order-by-orderid
-    static async cancelOrderFromExchange(){
-        const order_id = "29302323235cdfb21023aswqw909e5ad53";
+    static async cancelOrderFromExchange(order_id){
         const endPoint = `/api/v1/orders/${order_id}`;
 
         try {
@@ -195,8 +194,7 @@ static buildQueryParams(params){
 
 
     // https://www.kucoin.com/docs/rest/futures-trading/orders/get-order-details-by-orderid-clientoid
-    static async fetchOrderFromExchange(){
-        const order_id = "5cdfc138b21023a909e5ad55";
+    static async fetchOrderFromExchange(order_id){
         const endPoint = `/api/v1/orders/${order_id}`;
 
         try {
@@ -279,33 +277,23 @@ static buildQueryParams(params){
     }
 
     // https://www.kucoin.com/docs/rest/futures-trading/market-data/get-klines
-    static async fetchKlines(){
+    static async fetchKlines(symbol, granularity){
         const endPoint = "/api/v1/kline/query";
         try {
             const params = this.buildQueryParams({
-                symbol: "BBTC-USTD",
-                granularity: "1m"
+                symbol: symbol,
+                granularity: granularity
             });
     
             const response = await this.callExchangeAPI(endPoint, params);
     
             console.log("Response from API:", response);
-    
-            if (response.code !== '200000') {
-                console.error(`API Error: ${response.msg} (Code: ${response.code})`);
-                return;
-            }
-    
-            if (!response.data || !Array.isArray(response.data)) {
-                console.error("No data or invalid format received from API.");
-                return;
-            }
-    
-            // Ensure there is data to process
-            if (response.data.length === 0) {
+
+            if (!response?.data) {
                 console.warn("No klines data found.");
-                return;
+                return [];
             }
+            
     
             let klines = response.data.map(kline => [
                 kline[0], // time
@@ -313,14 +301,13 @@ static buildQueryParams(params){
                 kline[2], // high
                 kline[3], // low
                 kline[4], // close
-                0 // no-volume
+                kline[5], // no-volume
             ]);
     
             // Sort klines by timestamp
             klines.sort((a, b) => a[0] - b[0]);
     
             return klines;
-    
         } catch (error) {
             console.error("Error Fetching Klines:", error);
             throw error;

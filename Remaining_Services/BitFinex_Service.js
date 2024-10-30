@@ -47,6 +47,7 @@ class BitFinex_Service{
     const signature = crypto.createHmac('sha384', apiSecret)
         .update(signaturePayload).digest('hex');
     
+        console.warn("stuffs:", apiKey, signature, nonce)
 
     const url = `${uri}${endPoint}`;
 
@@ -99,7 +100,36 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
                 console.log("Error Message From Response:", response.error);
               }
 
-            return response;
+              let result = { coins: [] };
+    
+              // Check if the response data is an array
+              if (Array.isArray(response.data)) {
+                  console.log("Account Data Array:", response.data);
+      
+                  response.data.forEach((coinInfo) => {
+                      let availBal = coinInfo.available ? parseFloat(coinInfo.available) : 0;
+                      let frozenBal = coinInfo.frozen ? parseFloat(coinInfo.frozen) : 0;
+      
+                      result.coins.push({
+                          coin: coinInfo.coinName || "N/A", 
+                          free: availBal,
+                          used: frozenBal,
+                          total: availBal + frozenBal,
+                      });
+                  });
+              }
+      
+              // If no coins were added, shows default values
+              if (result.coins.length === 0) {
+                  result.coins.push({
+                      coin: "N/A",
+                      free: 0,
+                      used: 0,
+                      total: 0,
+                  });
+              }
+      
+              return result;
         } catch (error) {
             console.error("Error Fetching balance:", error);
             throw error;
@@ -110,14 +140,14 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
 
 
     // https://docs.bitfinex.com/reference/rest-auth-submit-order
-    static async placeOrderOnExchange(){
+    static async placeOrderOnExchange(symbol, type, price, amount){
         const endPoint = "v2/auth/w/order/submit";
         try {
             const params =  this.buildQueryParams({
-                symbol: "tBTCUSD",
-                type: "EXCHANGE LIMIT",
-                price: '10000',
-                amount: '1'
+                symbol: symbol,
+                type: type,
+                price: price,
+                amount: amount
             });
 
             const response = await this.callExchangeAPI(endPoint, params);
@@ -175,13 +205,13 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
     
 
     // https://docs.bitfinex.com/reference/rest-auth-cancel-order
-    static async cancelOrderFromExchange(){
+    static async cancelOrderFromExchange(id){
         const endPoint = "v2/auth/w/order/cancel";
         try {
             const params = this.buildQueryParams({
-                id: 1747566428
+                id: id
             });
-    
+
             const response = await this.callExchangeAPI(endPoint, params);
     
 
@@ -200,17 +230,19 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
     }
     
     // https://docs.bitfinex.com/reference/rest-auth-update-order
-    static async fetchOrderFromExchange(){              //pending function....
+    static async fetchOrderFromExchange(id){
         const endPoint = "v2/auth/w/order/update";
         try {
             const params = this.buildQueryParams({
-                id:'1747566428'
+                id: id
             });
 
             const response = await this.callExchangeAPI(endPoint, params);
 
             if (response[0] === "error") {
-                console.log("Response Is Not OK:", response);
+                const failureMsg =
+                response?.sMsg ?? response.msg ?? "Unexpected response format or missing critical fields.";
+              return FetchOrderResultFactory.createFalseResult(failureMsg);
             }
 
             return this.createFetchOrderResultFromResponse(response);
@@ -221,10 +253,13 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
     }
 
     static createFetchOrderResultFromResponse(response) {      
-        const status = response.status ?? this.STATE_MAP[response.status] ?? UserOrder.STATUS_ONGOING;
-        const avg = parseFloat(response.avg_deal_price) || 0;
-        const filled = parseFloat(response.filled_amount) || 0;
-        const time = new Date(response.create_time_ms).toISOString();
+        if (response.code > "200") {
+            return FetchOrderResultFactory.createFalseResult("No order data available.");
+        }
+        const status = response.data.status ?? this.STATE_MAP[response.data.status] ?? UserOrder.STATUS_ONGOING;
+        const avg = parseFloat(response.data.PRICE_AVG) || 0;
+        const filled = parseFloat(response.data.AMOUNT_ORIG) || 0;
+        const time = response.data.MTS_CREATE;
       
         return FetchOrderResultFactory.createSuccessResult(
           status,        //order status
@@ -300,16 +335,13 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
 
 
     // https://docs.bitfinex.com/reference/rest-public-candles
-    static async fetchKlines(){
-        const candle = "trade:1m:tBTCUSD";
-        const section = "hist";
+    static async fetchKlines(candle, section){
         const endPoint = `/v2/candles/${candle}/${section}`;
 
         try {
             const options = {method: 'GET', headers: {accept: 'application/json'}};
             const uri_pub = "https://api-pub.bitfinex.com";
             const url = `${uri_pub}${endPoint}`;
-
             const data = await fetch(url, options);
             const response = await data.json();
 
@@ -318,15 +350,15 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
             }
 
             let klines = response.map(kline => [
-                kline[0], // time
+                kline[0], // time (timestamp)
                 kline[5], // open
-                kline[3], // high
-                kline[4], // low
+                kline[4], // high
+                kline[3], // low
                 kline[2], // close
-                kline[5]// volume
-              ]);
-          
-              klines.sort((a, b) => a[0] - b[0]); //Sorted By timestamp
+                kline[1]  // volume
+            ]);
+            
+            klines.sort((a, b) => a[0] - b[0]); // Sort by timestamp
 
 
             console.log("Response:", klines);

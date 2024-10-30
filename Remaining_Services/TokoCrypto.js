@@ -3,6 +3,7 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
+import { interval } from "date-fns";
 
 
 
@@ -48,7 +49,7 @@ class TokoCrypto {
     const Toko_API_KEY = process.env.Toko_API_KEY;
     const Toko_SECRET_KEY = process.env.Toko_SECRET_KEY;
 
-        //TESTING OF VARIABLES...
+    //     //TESTING OF VARIABLES...
     // console.log("api:", Toko_API_KEY);
     // console.log("secret:", Toko_SECRET_KEY);
 
@@ -114,16 +115,10 @@ class TokoCrypto {
 
       const fetchData = await fetch(url, options);
       const response = await fetchData.json();
-    console.log("Generated URL:", url);
-
-    if (!response.ok) {
-      console.error("FetchData Is Not OK!", response.status);
-      throw new Error(response.message || `HTTP error! status: ${response.status}`);
-  }
 
       return response;
     } catch (error) {
-      console.error("Error CallExchangeAPI", error.msg);
+      console.error("Error CallExchangeAPI", error);
       throw error;
     }
   }
@@ -176,16 +171,16 @@ class TokoCrypto {
 
 
         //   https://www.tokocrypto.com/apidocs/#new-order--signed
-        static async placeOrderOnExchange(){
+        static async placeOrderOnExchange(symbol, side, type, quantity, price){
             const endPoint = "/open/v1/orders";
 
             try {
                 const params = this.buildQueryParams({
-                    symbol : "BTC_USDT",
-                    side : 1,
-                    type : 1,
-                    quantity : 0.16,
-                    price : 12275.03
+                    symbol : symbol,
+                    side : side,
+                    type : type,
+                    quantity : quantity,
+                    price : price
                 })
 
                 const response = await this.callExchangeAPI(endPoint, params, "POST");
@@ -221,12 +216,12 @@ class TokoCrypto {
 
 
         // https://www.tokocrypto.com/apidocs/#all-orders-signed
-        static async pendingOrders(){
+        static async pendingOrders(symbol){
             const endPoint = "/open/v1/orders";
 
             try {
                 const params  = this.buildQueryParams({
-                    symbol : "BTC_USDT"
+                    symbol : symbol
                 })
                 const response = await this.callExchangeAPI(endPoint, params);
 
@@ -242,12 +237,12 @@ class TokoCrypto {
         }
 
         // https://www.tokocrypto.com/apidocs/#cancel-order-signed
-        static async cancelOrderFromExchange(){
+        static async cancelOrderFromExchange(orderId){
             const endPoint = "/open/v1/orders/cancel";
 
             try {
                 const params = this.buildQueryParams({
-                    orderId : "305549804", //Fake OrderID
+                    orderId : orderId, //Fake OrderID
                 })
                 const response = await this.callExchangeAPI(endPoint, params, "POST");
 
@@ -265,12 +260,12 @@ class TokoCrypto {
 
 
         // https://www.tokocrypto.com/apidocs/#query-order-signed
-        static async fetchOrderFromExchange(){
+        static async fetchOrderFromExchange(orderId){
             const endPoint = "/open/v1/orders/detail";
 
             try {
                 const params = this.buildQueryParams({
-                    orderId : "305549804", //Fake OrderID
+                    orderId : orderId, //Fake OrderID
                 });
 
                 const response = await this.callExchangeAPI(endPoint, params);
@@ -305,12 +300,12 @@ class TokoCrypto {
 
 
         // https://www.tokocrypto.com/apidocs/#account-trade-list-signed
-        static async loadTradesForClosedOrder(){
+        static async loadTradesForClosedOrder(symbol){
             const endPoint = "/open/v1/orders/trades";
 
             try {
                 const params =  this.buildQueryParams({
-                    symbol : "BTC_USDT"
+                    symbol : symbol
                 });
 
                 const response = await this.callExchangeAPI(endPoint, params);
@@ -359,12 +354,12 @@ class TokoCrypto {
 
 
         // https://www.tokocrypto.com/apidocs/#klinecandlestick-data
-        static async fetchKlines() {
+        static async fetchKlines(symbol, interval) {
             const endPoint = "https://api.binance.com/api/v1/klines";
             try {
                 const params = new URLSearchParams({
-                    symbol: "BTCUSDT",
-                    interval: "1s",
+                    symbol: symbol,
+                    interval: interval,
                 }).toString();
         
                 const url = `${endPoint}?${params}`;

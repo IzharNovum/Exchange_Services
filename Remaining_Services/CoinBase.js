@@ -140,8 +140,7 @@ static async FetchAccount(){    //To know the balance and UUID Number...
   }
 };
   // https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getaccount
-  static async fetchBalanceOnExchange() {
-    const account_uuid = "a0eb990d-ec2e-5765-a071-6089d4134a36";
+  static async fetchBalanceOnExchange(account_uuid) {
     const endPoint = `/api/v3/brokerage/accounts/${account_uuid}`;
     try {
       const response = await this.callExchangeApi(endPoint, {});
@@ -188,15 +187,15 @@ static async FetchAccount(){    //To know the balance and UUID Number...
 
 
   // https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_postorder
-      static async placeOrderOnExchange() {
+      static async placeOrderOnExchange(client_order_id, product_id, side, type, size) {
         const endPoint = "/api/v3/brokerage/orders";
         try {
           const params = this.buildQueryParams({
-            client_order_id: "2389293812345",
-            product_id: "BTC-USD",
-            side: "BUY",
-            type: "market",
-            size: "0.5"
+            client_order_id: client_order_id,
+            product_id: product_id,
+            side: side,
+            type: type,
+            size: size
           });
 
           const response = await this.callExchangeApi(endPoint, params, "POST");
@@ -254,12 +253,12 @@ static async FetchAccount(){    //To know the balance and UUID Number...
 
 
       // https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_cancelorders
-      static async cancelOrderFromExchange(){
+      static async cancelOrderFromExchange(order_ids){
         const endPoint = "/api/v3/brokerage/orders/batch_cancel";
 
         try {
           const params = this.buildQueryParams({
-            order_ids: "238923"
+            order_ids: order_ids
           });
 
           const response = await this.callExchangeApi(endPoint, params, "POST");
@@ -277,8 +276,7 @@ static async FetchAccount(){    //To know the balance and UUID Number...
       }
 
       // https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_gethistoricalorder
-      static async fetchOrderFromExchange(){
-        const order_id = "0000-000000-000000";
+      static async fetchOrderFromExchange(order_id){
         const endPoint = `/api/v3/brokerage/orders/historical/${order_id}`;
         try {
           const response = await this.callExchangeApi(endPoint, {});
@@ -375,14 +373,15 @@ static async FetchAccount(){    //To know the balance and UUID Number...
 
 
       // https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getcandles
-      static async fetchKlines(){
-        const product_id =  'BTC-USD';
+      static async fetchKlines(product_id, granularity){
         const endPoint = `/api/v3/brokerage/products/${product_id}/candles`;
 
         try {
           const params = this.buildQueryParams({
-            granularity: "ONE_MINUTE",
+            granularity: granularity
           })
+          console.error("Response checking API", params);
+
           const response = await this.callExchangeApi(endPoint, params);
 
           if(response.error){
@@ -401,8 +400,6 @@ static async FetchAccount(){    //To know the balance and UUID Number...
        
         klines.sort((a, b) => a[0] - b[0]); //Sorted By timestamp
 
-
-      console.log("Response:", klines);
 
       return klines;
         } catch (error) {
