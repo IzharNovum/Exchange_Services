@@ -32,8 +32,30 @@ class Indodax_Services{
         return params;
     }
 
+    static endPoints = {
+        Balance : "getInfo",
+        Place_Order : "trade",
+        Pending_Order : "openOrders",
+        Cancel_Order : "cancelOrder",
+        Fetch_Order : "getOrder",
+        Trades : "tradeHistory",
+        klines : "tradingview/history_v2"
+      }
+    
+      static isError(response){
+        const HTTP_OK = 1;
+        return response.success !== HTTP_OK;
+      }
+    
+    /**
+     * Authentication for this API.
+     * @async
+     * @param {string} endPoint - Url endpoint.
+     * @param {string || number} params - Function parameters.  
+     * @param {string} method - HTTP Method
+     * @returns {Promise<authData>} - Authentication body, headers 
+     */
 
-    // AUTHENTICATION...
     static async Authentication(endPoint = null, params = {}, method = "POST"){
         const timestamp = Date.now();
         const API_Key = process.env.API_KEY_Indodax;
@@ -63,7 +85,14 @@ class Indodax_Services{
         }
     }
 
-    // CALL-EXCHANGE-API...
+/**
+ * Exchange API Caller function.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - Function Method
+ * @returns {Promise<Object>} - Fetches data from the API.
+ */
     static async callExchangeAPI(endPoint, params, method = "POST"){
         try {
             const uri = this.getBaseUrl();
@@ -93,48 +122,63 @@ class Indodax_Services{
 
 
 
-    // NOTE : INDODAX DOCUMENT COMMON URL : "https://indodax.com/downloads/INDODAXCOM-API-DOCUMENTATION.pdf"
+// NOTE : INDODAX PDF DOCUMENT COMMON URL : "https://indodax.com/downloads/INDODAXCOM-API-DOCUMENTATION.pdf"
 
-    // BALANCE...
+/**
+ * Fecthes User balance from the exchange.
+ * @async
+ * @param {string} - Method for the API Call "Like an endPoint".
+ * @returns {Promise<{coins: Array}>} - User Balance-data
+ * @see  https://indodax.com/downloads/INDODAXCOM-API-DOCUMENTATION.pdf
+ */
     static async fetchBalanceOnExchange(){
-        const endPoint = "/getInfo";
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
-            console.warn("response from api:", response);
-        
+            const params = this.buildQueryParams({
+                method : this.endPoints.Balance
+            })
+            const response = await this.callExchangeAPI("", params);
+
+            if (!response) {
+                console.error("Error message from response", response.error || "Unknown error");
+                throw new Error(response.error || "Unknown error occuried");
+              };
+              
+            console.log("Response:", response);
+
             let result = { coins: [] };
-        
 
-            if (response?.return?.balance) {
-                const balance = response.return.balance;
-                const balanceHold = response.return.balance_hold;
-        
-
-                Object.keys(balance).forEach((asset) => {
-                    let availBal = balance[asset] || 0; // Get available balance
-                    let frozenBal = balanceHold[asset] || 0; // Get frozen balance
-        
-                    if (availBal > 0 || frozenBal > 0) {
-                        result.coins.push({
-                            coin: asset,
-                            free: availBal,
-                            used: frozenBal,
-                            total: availBal + frozenBal,
-                        });
-                    }
-                });
+            // Check if the response has the expected structure
+            if (response?.return) {
+              const balance = response.return.balance || {};
+              const balanceHold = response.return.balance_hold || {};
+          
+              // Iterate over the assets in the balance object
+              Object.keys(balance).forEach((asset) => {
+                const availBal = parseFloat(balance[asset]) || 0; // Available balance
+                const frozenBal = parseFloat(balanceHold[asset]) || 0; // Frozen balance
+          
+                // Include the asset only if there's a non-zero balance
+                if (availBal > 0 || frozenBal > 0) {
+                  result.coins.push({
+                    coin: asset,
+                    free: availBal,
+                    used: frozenBal,
+                    total: availBal + frozenBal,
+                  });
+                }
+              });
             }
-        
-            // If there are no coins or balance available, this shows default balance
+          
+            // If no balances are available, add default values
             if (result.coins.length === 0) {
-                result.coins.push({
-                    coin: 0,
-                    free: 0,
-                    used: 0,
-                    total: 0,
-                });
+              result.coins.push({
+                coin: "N/A",
+                free: 0,
+                used: 0,
+                total: 0,
+              });
             }
-        
+          
             console.log("Formatted Result:", result);
             return result;
         } catch (error) {
@@ -143,20 +187,30 @@ class Indodax_Services{
         
     }
 
-    // PLACE ORDER...
+    /**
+     * Places an order from exchange
+     * @async
+     * @param {string} method - Method for the API Call "Like an endPoint".
+     * @param {string} pair - Trading pair : btc_idr
+     * @param {string} type - buy / sell
+     * @param {number} price - order price
+     * @param {number} idr - amount of rupiah to buy btc.
+     * @returns {Promise<Object>} - Details of the placed order.
+     * @see  https://indodax.com/downloads/INDODAXCOM-API-DOCUMENTATION.pdf
+     */
     static async placeOrderOnExchange(pair, type, price, idr){
-        const endPoint = "/trade";
         try {
             const params = this.buildQueryParams({
+                method : this.endPoints.Place_Order,
                 pair: pair,
                 type: type,
                 price: price,
-                idr: idr    
+                idr: idr
             })
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI("", params);
             console.log("Response From API:", response);
 
-            if(response.success !== 1){
+            if(this.isError(response)){
                 const errMsg = response.error ?? response.msg ?? JSON.stringify(response);
                 return PlaceOrderResultFactory.createFalseResult(errMsg, response);
             }
@@ -184,17 +238,28 @@ class Indodax_Services{
           throw error;
         }
     }
-
-    // PENDING ORDERS / OPEN ORDERS...
+/**
+ * Fecthes open or pending orders from the exchange.
+ * @async
+ * @param {string} method - Method for the API Call "Like an endPoint".
+ * @returns {Promise<{object}>} - List of pending orders.
+ * @see  https://indodax.com/downloads/INDODAXCOM-API-DOCUMENTATION.pdf
+ */
     static async pendingOrders(){
-        const endPoint = "/openOrders";
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const params = this.buildQueryParams({
+                method : this.endPoints.Pending_Order
+            });
 
-            if(response.success !== 1){
-                console.warn("Response Is Not OK", response);
-            }
-            // console.log("response From API:", response);
+            const response = await this.callExchangeAPI("", params);
+
+            if(this.isError(response)){
+                const errMsg = response.error ?? response.msg ?? JSON.stringify(response);
+                return errMsg;
+            };
+
+
+            console.log("response From API:", response);
 
             return response;
         } catch (error) {
@@ -203,22 +268,33 @@ class Indodax_Services{
         }
     }
 
-    // CANCEL ORDER...
+    /**
+     * Cancels an existing order from exchange
+     * @async
+     * @param {string} method - Method for the API Call "Like an endPoint".
+     * @param {string} pair - Trading pair : btc_idr
+     * @param {number} order_id - Order ID
+     * @param {string} type - buy / sell
+     * @returns {Promise<object>} - Status of Order cancellation
+     * @see https://www.gate.io/docs/developers/apiv4/en/#cancel-a-single-order
+     */
+
     static async cancelOrderFromExchange(pair, order_id, type){
-        const endPoint = "/cancelOrder";
         try {
             const params = this.buildQueryParams({
+                method : this.endPoints.Cancel_Order,
                 pair: pair,
                 order_id: order_id,
                 type: type,
             })
-            const response = await this.callExchangeAPI(endPoint, params);
-            if(response.success !== 1){
+            const response = await this.callExchangeAPI("", params);
+
+            if(this.isError(response)){
                 const errMsg = response.error ?? response.msg ?? JSON.stringify(response);
                 return new CancelOrderResult(false, errMsg, response);
             }
 
-            // console.log("Response From API:", response);
+            console.log("Response:", response);
 
             return new CancelOrderResult(true, "Success", response);
         } catch (error) {
@@ -227,21 +303,32 @@ class Indodax_Services{
         }
     }
 
-    // ORDER DETAILS...
+
+    /**
+     * Fetches Order details from exchange
+     * @async
+     * @param {string} method - Method for the API Call "Like an endPoint".
+     * @param {string} pair - Trading pair : btc_idr
+     * @param {number} order_id - Order ID
+     * @returns {Promise<object>} - Order details
+     * @see https://www.gate.io/docs/developers/apiv4/en/#cancel-a-single-order
+     */
+
     static async fetchOrderFromExchange(pair, order_id){
-        const endPoint = "/getOrder";
         try {
             const params =  this.buildQueryParams({
+                method : this.endPoints.Fetch_Order,
                 pair: pair,
                 order_id: order_id
             })
-            const response = await this.callExchangeAPI(endPoint, params);
-            if(response.success !== 1){
+            const response = await this.callExchangeAPI("", params);
+
+            if(this.isError(response)){
                 const errMsg = response.error ?? response.msg ?? JSON.stringify(response);
                 return FetchOrderResultFactory.createFalseResult(errMsg);
             };
 
-            // console.log("resposne from API:", response);
+            console.log("resposne:", response);
 
             return this.createFetchOrderResultFromResponse(response);
         } catch (error) {
@@ -269,17 +356,24 @@ class Indodax_Services{
     }
     
 
-        // TRADES HISTORY
+    /**
+     * Fetches recent trades from exchange
+     * @async
+     * @param {string} method - Method for the API Call "Like an endPoint".
+     * @param {string} pair - Trading pair : btc_idr
+     * @returns {Promise<object>} - Order details
+     * @see https://www.gate.io/docs/developers/apiv4/en/#cancel-a-single-order
+     */
     static async loadTradesForClosedOrder(pair){
-        const endPoint = "/tradeHistory";
         try {
             const params = this.buildQueryParams({
+                method : this.endPoints.Trades,
                 pair: pair
             })
-            const response = await this.callExchangeAPI(endPoint, params);
-            console.log("resposane from API:", response);
+            const response = await this.callExchangeAPI("", params);
+            console.log("response:", response);
 
-            if(response.success !== 1){
+            if(this.isError(response)){
                 const errMsg = response.error ?? response.msg ?? JSON.stringify(response);
                 return errMsg;
             };
@@ -346,24 +440,37 @@ class Indodax_Services{
     }
     
 
-    // https://github.com/btcid/indodax-official-api-docs/blob/master/Public-RestAPI.md#server-time
-    static async fetchKlines(from, to, tf, symbol) {
-        const endPoint = "/tradingview/history_v2";
-    
+    /**
+     * Fetches market candle data from exchange
+     * @async
+     * @param {number} from - beginning of time frame 
+     * @param {number} to - end of time frame
+     * @param {number} tf - time frame range in minute, day, or week 
+     * @param {string} symbol - Trading pair : btc_idr
+     * @returns {Promise<object>} - List of market candles.
+     * @see https://github.com/btcid/indodax-official-api-docs/blob/master/Public-RestAPI.md#server-time
+     */
+
+    static async fetchKlines(from, to, tf, symbol) {    
         try {
-        const uri = "https://indodax.com";
+        const uri = "https://indodax.com/";
         const params = new URLSearchParams({
-            from: from, //dont need to sort the
+            from: from,
             to: to,   
             tf: tf,               
             symbol: symbol 
         });
 
-            const url = `${uri}${endPoint}?${params.toString()}`;
+            const url = `${uri}${this.endPoints.klines}?${params.toString()}`;
             
             const response = await fetch(url);
+
+            if (!response) {
+                console.error("Error message from response", response.error || "Unknown error");
+                throw new Error(response.error || "Unknown error occuried");
+              };
+
             const data = await response.json(); 
-    
             data.sort((a, b) => a[0] - b[0]); //Sorted By timestamp
 
             console.log("Response From API:", data);

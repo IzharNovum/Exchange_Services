@@ -898,16 +898,7 @@ const routes = [
 
 
                                             //Routes For CoinBase_Service.
-
-                                            { path: "/Coinbase-Service/account", handler: async (req, res) => {
-                                                try {
-                                                    const order = await CoinBase_Service.FetchAccount();
-                                                    res.json(order);
-                                                } catch (error) {
-                                                    console.error("Error Fetching Accout:", error.message);
-                                                    res.status(500).json({ error: "Failed to Fetching Account:" });
-                                                }
-                                            }},
+                                            
                                             { path: "/Coinbase-Service/balance", handler: async (req, res) => {
                                                 try {
                                                     const order = await CoinBase_Service.fetchBalanceOnExchange("a0eb990d-ec2e-5765-a071-6089d4134a36");

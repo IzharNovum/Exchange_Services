@@ -3,7 +3,6 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
-import { interval } from "date-fns";
 
 
 
@@ -36,6 +35,29 @@ class Gate_Service{
         return params;
     }
 
+    static endPoints = {
+        Balance : "/spot/accounts",
+        Place_Order : "/spot/orders",
+        Pending_Order : "/spot/open_orders",
+        Cancel_Order :(order_id) => `/spot/orders/${order_id}`,
+        Fetch_Order :(order_id) => `/spot/orders/${order_id}`,
+        Trades : "/spot/my_trades",
+        klines : "/spot/candlesticks"
+      }
+    
+      static isError(response){
+        const HTTP_OK = 0; 
+        return response.code !== HTTP_OK;
+      }
+    
+    /**
+     * Authentication for this API.
+     * @async
+     * @param {string} endPoint - Url endpoint.
+     * @param {string || number} params - Function parameters.  
+     * @param {string} method - HTTP Method
+     * @returns {Promise<authData>} - Authentication url, headers 
+     */
     static async Authentication(endPoint = null, params = {}, method = "GET"){
         const apikey = process.env.API_KEY_Gate;
         const secretkey = process.env.SECRECT_KEY_Gate;    
@@ -67,7 +89,6 @@ class Gate_Service{
                 'KEY': apikey,
                 'SIGN': signature,
                 'Timestamp': timeStamp,
-                // 'Accept': 'application/json'
                 'Content-Type': 'application/json'
               },
               url
@@ -75,6 +96,14 @@ class Gate_Service{
     }
 
 
+/**
+ * Exchange API Caller function.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - Function Method
+ * @returns {Promise<Object>} - Fetches data from the API.
+ */
     static async callExchangeAPI(endPoint, params, method = "GET"){
         try {
             const { headers , url } = await this.Authentication(endPoint, params, method);
@@ -99,17 +128,22 @@ class Gate_Service{
         }
     }
 
+/**
+ * Fecthes User balance from the exchange.
+ * @async
+ * @returns {Promise<{coins: Array}>} - User Balance-data
+ * @see  https://www.gate.io/docs/developers/apiv4/en/#list-spot-accounts
+ */
 
-    // https://www.gate.io/docs/developers/apiv4/en/#list-spot-accounts
     static async fetchBalanceOnExchange() {
-        const endPoint = "/spot/accounts";
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Balance, {});
     
-            if (response.code !== 0) {
-                console.warn("Response Is Not OK!", response);
-            }
-    
+            if (this.isError(response)) {
+                console.error("Error message from response", response.message || "Unknown error");
+                throw new Error(response.message || "Unknown error occuried");
+              };
+
             let result = { coins: [] };
     
             // Check if the response is an array
@@ -147,9 +181,18 @@ class Gate_Service{
     }
     
 
-    // https://www.gate.io/docs/developers/apiv4/en/#create-an-order
+    /**
+     * Places an order from exchange.
+     * @async
+     * @param {string} currency_pair - Trading Pair : BTC_USDT
+     * @param {string} side - buy / sell
+     * @param {string} amount - quantity of the order
+     * @param {string} price - price of the order
+     * @returns {Promise<object>} - Details of the placed order.
+     * @see https://www.gate.io/docs/developers/apiv4/en/#create-an-order
+     */
+
     static async placeOrderOnExchange(currency_pair, side, amount, price) {
-        const endPoint = '/spot/orders';
         try {
             const params = this.buildQueryParams({
                 currency_pair: currency_pair,
@@ -158,9 +201,9 @@ class Gate_Service{
                 price: price,
     
             })
-          const response = await this.callExchangeAPI(endPoint, params, "POST");
+          const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
     
-          if(!response){
+          if(this.isError(response)){
             const msg = response.message?.[0]?.sMsg ?? response.message ?? JSON.stringify(response);
             return PlaceOrderResultFactory.createFalseResult(msg, response);
         }
@@ -190,15 +233,21 @@ class Gate_Service{
     }
 
 
-    // https://www.gate.io/docs/developers/apiv4/en/#list-all-open-orders
-      static async pendingOrders(){
-        const endPoint = "/spot/open_orders";
-        try {
-            const response =  await this.callExchangeAPI(endPoint, {});
+    /**
+     * Fetches Open or Penidng order from exchange
+     * @async
+     * @returns {Promise<object>} - List of the pending orders
+     * @see https://www.gate.io/docs/developers/apiv4/en/#list-all-open-orders
+     */
 
-            if(!response){
-                console.warn("Response Is Not OK!", response);
-            }
+      static async pendingOrders(){
+        try {
+            const response =  await this.callExchangeAPI(this.endPoints.Pending_Order, {});
+
+            if (this.isError(response)) {
+                console.error("Error message from response", response.message || "Unknown error");
+                throw new Error(response.message || "Unknown error occuried");
+              };
 
             console.log("Response:", response);
 
@@ -210,19 +259,24 @@ class Gate_Service{
     }
 
 
+    /**
+     * Cancels an existing order from exchange
+     * @async
+     * @param {number} order_id - Order ID
+     * @returns {Promise<object>} - Status of Order cancellation
+     * @see https://www.gate.io/docs/developers/apiv4/en/#cancel-a-single-order
+     */
 
-    // https://www.gate.io/docs/developers/apiv4/en/#cancel-a-single-order
     static async cancelOrderFromExchange(order_id) {
-        const endPoint = `/spot/orders/${order_id}`;
-    
         try {
-            // The method for this function is DELETE and API DOC guided to use POST. POST is not working shows an invalid method error so used GET method...
-            const response = await this.callExchangeAPI(endPoint, {}, "GET");
+            // The method for this function is "DELETE" and API DOC guided to use POST. POST is not working shows an invalid method error so used GET method...
+            const response = await this.callExchangeAPI(this.endPoints.Cancel_Order(order_id), {}, "GET");
     
-            if(!response){
-                const msg = response.message?.[0]?.sMsg ?? response.message ?? JSON.stringify(response);
-                return new CancelOrderResult(false, msg, response);
-            }
+            if (this.isError(response)) {
+                const errMsg =
+                  response.error ?? response.message ?? JSON.stringify(response);
+                return new CancelOrderResult(false, errMsg, response);
+              };
 
         return new CancelOrderResult(true, "Success", response);
         } catch (error) {
@@ -232,15 +286,23 @@ class Gate_Service{
     }
     
 
-    
-    // https://www.gate.io/docs/developers/apiv4/en/#get-a-single-order
+    /**
+     * Fetches order details form exchange
+     * @async
+     * @param {number} order_id - Order ID
+     * @returns {Promise<object>} - Order Details
+     * @see https://www.gate.io/docs/developers/apiv4/en/#get-a-single-order
+     */
+
     static async fetchOrderFromExchange(order_id) { 
-        const endPoint = `/spot/orders/${order_id}`;
-    
         try {
-            const response = await this.callExchangeAPI(endPoint, {}) ;
+            const response = await this.callExchangeAPI(this.endPoints.Fetch_Order(order_id), {}) ;
     
-            console.log("Response:", response);
+            if (this.isError(response)) {
+                const failureMsg = response?.message ?? "Unexpected response format or missing critical fields.";
+                return FetchOrderResultFactory.createFalseResult(failureMsg);
+                
+              }
     
             return this.createFetchOrderResultFromResponse(response);
         } catch (error) {
@@ -267,17 +329,21 @@ class Gate_Service{
         );
       }
 
+    /**
+     * Fetches recent Trades details form exchange
+     * @async
+     * @returns {Promise<object>} - Recent trades details.
+     * @see https://www.gate.io/docs/developers/apiv4/en/#list-personal-trading-history
+     */
 
-    // https://www.gate.io/docs/developers/apiv4/en/#list-personal-trading-history
     static async loadTradesForClosedOrder(){
-        const endPoint = "/spot/my_trades";
-
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Trades, {});
 
-            if(!response){
-                console.log("Response Is Not OK:", response);
-            }
+            if (this.isError(response)) {
+                console.error("Error message from response", response.message || "Unknown error");
+                throw new Error(response.message || "Unknown error occuried");
+              };
 
             return this.convertTradesToCcxtFormat(response ?? {});
         } catch (error) {
@@ -328,21 +394,25 @@ class Gate_Service{
     }
     
 
+    /**
+     * Fetches candles details form exchange
+     * @async
+     * @returns {Promise<object>} - list of market candles.
+     * @see https://www.gate.io/docs/developers/apiv4/en/#market-candlesticks
+     */
 
-    // https://www.gate.io/docs/developers/apiv4/en/#market-candlesticks
     static async fetchKlines(currency_pair, interval){
-        const endPoint = "/spot/candlesticks";
-
         try {
             const params = this.buildQueryParams({
                 currency_pair: currency_pair,
                 interval: interval
             })
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.klines, params);
 
-            if(!response){
-                console.log("Response Is Not OK:", response);
-            }
+            if (!response) {
+                console.error("Error message from response", response.message || "Unknown error");
+                throw new Error(response.message || "Unknown error occuried");
+              };
 
 
             let klines = response.map(kline => [

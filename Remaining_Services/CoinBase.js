@@ -36,11 +36,36 @@ class CoinBase_Service{
     return "api.coinbase.com";
   }
 
+  static endPoints = {
+    Account : "/api/v3/brokerage/accounts",
+    Balance :(account_uuid) =>`/api/v3/brokerage/accounts/${account_uuid}`,
+    Place_Order : "/api/v3/brokerage/orders",
+    Pending_Order : "/api/v3/brokerage/orders/historical/batch",
+    Cancel_Order : "/api/v3/brokerage/orders/batch_cancel",
+    Fetch_Order :(order_id) => `/api/v3/brokerage/orders/historical/${order_id}`,
+    Trades : "/api/v3/brokerage/orders/historical/fills",
+    klines :(product_id) => `/api/v3/brokerage/products/${product_id}/candles`
+  }
+
+
+  static isError(response){
+    const HTTP_OK = 200; 
+    return response.error || response.code && response.code !== HTTP_OK;
+  }
+
+
+/**
+ * Authentication for this API.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - HTTP Method
+ * @returns {Promise<authData>} - Authentication Headers 
+ */
 
   static async Authentication(endPoint = null, params, method = "GET") {
     const key_name = process.env.CB_API_KEY;
     const key_secret = process.env.CB_SECRET_KEY;
-
 
     // console.log("keys:", key_name, "secret:", key_secret)
 
@@ -77,6 +102,16 @@ class CoinBase_Service{
     };
   }
 
+
+/**
+ * Exchange API Caller function.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - Function Method
+ * @returns {Promise<Object>} - Fetches data from the API.
+ */
+
   static async callExchangeApi(endPoint, params = {}, method = "GET") {
     try {
       const { headers } = await this.Authentication(endPoint, params, method);
@@ -95,12 +130,6 @@ class CoinBase_Service{
       }
 
       const req_url = `https://${this.getBaseUrl()}${endPoint}${queryString}`;
-
-      // console.log("Request URL:", req_url);
-      // console.log("Request Headers:", headers);
-      if (method === "POST") {
-        // console.log("Request Body:", body);
-      }
 
       const options = {
         method,
@@ -121,33 +150,21 @@ class CoinBase_Service{
   }
 
 
+/**
+ * Fecthes User balance from the exchange.
+ * @async
+ * @param {string} account_uuid  account_uuid -  Universal Unique Identifier.
+ * @returns {Promise<{coins: Array}>} - User Balance-data
+ * @see https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getaccount
+ */
 
-
-// https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getaccounts
-static async FetchAccount(){    //To know the balance and UUID Number...
-  const endPoint = "/api/v3/brokerage/accounts";
-  try {
-      const response = await this.callExchangeApi(endPoint, {});
-
-      if(response.error){
-        console.log("Error Message From Response:", response.error);
-      }
-
-      return response;
-  } catch (error) {
-      console.error("Error Fetching balance:", error);  
-      throw error;
-  }
-};
-  // https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getaccount
   static async fetchBalanceOnExchange(account_uuid) {
-    const endPoint = `/api/v3/brokerage/accounts/${account_uuid}`;
     try {
-      const response = await this.callExchangeApi(endPoint, {});
+      const response = await this.callExchangeApi(this.endPoints.Balance(account_uuid), {});
 
-      if(response.error){
-        console.log("Error Message From Response:", response.error);
-        return { coins: [] };
+      if(this.isError(response)){
+        console.error("Error message from response:", response.error || response.message || "Unknown error");
+        throw new Error(response.error || response.message || "Unknown error occured");
       }
   
       let result = { coins: [] };
@@ -177,18 +194,27 @@ static async FetchAccount(){    //To know the balance and UUID Number...
       }
   
       // console.log("Formatted Result:", result);
-      return result;
+      // return result;
+      return response
     } catch (error) {
       console.error("Error Fetching Balance:", error.message);
       throw error;
     }
   }
   
+/**
+ * Places an order from exchange
+ * @async
+ * @param {number} client_order_id - client_order_id - client unique ID.
+ * @param {string} product_id - tradig pair : BTC-USD.
+ * @param {string} side - side - buy / sell
+ * @param {string} type - type - market
+ * @param {number} size - size 1, 2
+ * @returns {Promise<object>} - Order details in PlaceOrderResultFactory format.
+ * @see https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_postorder
+ */
 
-
-  // https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_postorder
       static async placeOrderOnExchange(client_order_id, product_id, side, type, size) {
-        const endPoint = "/api/v3/brokerage/orders";
         try {
           const params = this.buildQueryParams({
             client_order_id: client_order_id,
@@ -198,12 +224,12 @@ static async FetchAccount(){    //To know the balance and UUID Number...
             size: size
           });
 
-          const response = await this.callExchangeApi(endPoint, params, "POST");
+          const response = await this.callExchangeApi(this.endPoints.Place_Order, params, "POST");
 
 
-          if(response.error){
+          if(this.isError(response)){
             // console.log("Error Message From Response:", response.error);
-            const errMsg = response.error ?? response.msg ?? JSON.stringify(response);
+            const errMsg = response.error ?? response.message ?? JSON.stringify(response);
             return PlaceOrderResultFactory.createFalseResult(errMsg, response);
           }
 
@@ -232,17 +258,21 @@ static async FetchAccount(){    //To know the balance and UUID Number...
       }
   }
 
+  /**
+   * Fecthes Open Or Pending Orders from exchange
+   * @async
+   * @returns {Promise<object>} - List of open orders
+   * @see https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_gethistoricalorders
+   */
 
-      // https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_gethistoricalorders
       static async pendingOrders(){
-        const endPoint = "/api/v3/brokerage/orders/historical/batch";
-
         try {
-          const response = await this.callExchangeApi(endPoint, {});
+          const response = await this.callExchangeApi(this.endPoints.Pending_Order, {});
 
-          if(response.error){
-            console.log("Error Message From Response:", response.error);
-          }
+          if(this.isError(response)){
+            console.error("Error message from response:", response.error || response.message || "Unknown error");
+            throw new Error(response.error || response.message || "Unknown error occured");
+          };
 
           return response;
         } catch (error) {
@@ -251,20 +281,24 @@ static async FetchAccount(){    //To know the balance and UUID Number...
         }
       }
 
+      /**
+       * Cancels an existing order from exchange
+       * @async
+       * @param {number} order_ids - order ID
+       * @returns {Promise<object>} -  Status of Order Cancellation
+       * @see https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_cancelorders
+       */
 
-      // https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_cancelorders
       static async cancelOrderFromExchange(order_ids){
-        const endPoint = "/api/v3/brokerage/orders/batch_cancel";
-
         try {
           const params = this.buildQueryParams({
             order_ids: order_ids
           });
 
-          const response = await this.callExchangeApi(endPoint, params, "POST");
+          const response = await this.callExchangeApi(this.endPoints.Cancel_Order, params, "POST");
 
-          if(response.error){
-            const errMsg = response.error ?? response.msg ?? JSON.stringify(response);
+          if(this.isError(response)){
+            const errMsg = response.error ?? response.message ?? JSON.stringify(response);
             return new CancelOrderResult(false, errMsg, response);
           }
 
@@ -275,15 +309,21 @@ static async FetchAccount(){    //To know the balance and UUID Number...
         }
       }
 
-      // https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_gethistoricalorder
-      static async fetchOrderFromExchange(order_id){
-        const endPoint = `/api/v3/brokerage/orders/historical/${order_id}`;
-        try {
-          const response = await this.callExchangeApi(endPoint, {});
+      /**
+       * Fetches order details from exchange
+       * @async
+       * @param {number} order_ids - order ID
+       * @returns {Promise<object>} -  Order deetails.
+       * @see https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_gethistoricalorder
+       */
 
-          if(response.error){
-            const failureMsg =
-            response?.sMsg ?? response.msg ?? "Unexpected response format or missing critical fields.";
+
+      static async fetchOrderFromExchange(order_id){
+        try {
+          const response = await this.callExchangeApi(this.endPoints.Fetch_Order(order_id), {});
+
+          if(this.isError(response)){
+            const failureMsg = response?.error ?? response.message ?? "Unexpected response format or missing critical fields.";
           return FetchOrderResultFactory.createFalseResult(failureMsg);
           }
 
@@ -311,16 +351,21 @@ static async FetchAccount(){    //To know the balance and UUID Number...
         );
     }
     
+    /**
+     * Fetches recent trades from exchange
+     * @async
+     * @returns {Promise<object>} - List of recent trades.
+     * @see  https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getfills
+     */
 
-      // https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getfills
       static async loadTradesForClosedOrder(){
-        const endPoint = "/api/v3/brokerage/orders/historical/fills";
         try {
-          const response = await this.callExchangeApi(endPoint, {});
+          const response = await this.callExchangeApi(this.endPoints.Trades, {});
 
-          if(response.error){
-            console.error("Response From API", response);
-          }
+          if(this.isError(response)){
+            console.error("Error message from response:", response.error || response.message || "Unknown error");
+            throw new Error(response.error || response.message || "Unknown error occured");
+          };
 
           return this.convertTradesToCcxtFormat(response ?? {});
         } catch (error) {
@@ -371,21 +416,26 @@ static async FetchAccount(){    //To know the balance and UUID Number...
     }
 
 
+    /**
+     * Fetches Market candles data from exchange
+     * @async
+     * @param {string} product_id  - tradig pair : BTC-USD.
+     * @param {string} granularity -time : 1m, 2m
+     * @returns {Promise<object>} - List of candle data.
+     * @see https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getcandles
+     */
 
-      // https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getcandles
       static async fetchKlines(product_id, granularity){
-        const endPoint = `/api/v3/brokerage/products/${product_id}/candles`;
-
         try {
           const params = this.buildQueryParams({
             granularity: granularity
-          })
-          console.error("Response checking API", params);
+          });
 
-          const response = await this.callExchangeApi(endPoint, params);
+          const response = await this.callExchangeApi(this.endPoints.klines(product_id), params);
 
-          if(response.error){
-            console.error("Response From API", response);
+          if(!response){
+            console.error("Error message from response:", response.error || response.message || "Unknown error");
+            throw new Error(response.error || response.message || "Unknown error occured");
           }
 
 

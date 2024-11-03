@@ -33,16 +33,38 @@ class BitGetFuture_Service extends BitGet_Service {
         return await BitGet_Service.callExchangeAPI(endPoint, params, method);
     }
 
+    static endPoints = {
+        Balance : "/api/v2/mix/account/accounts",
+        Place_Order : "/api/v2/mix/order/place-order",
+        Pending_Order : "/api/v2/mix/order/orders-pending",
+        Cancel_Order : "/api/v2/mix/order/cancel-order",
+        Fetch_Order : "/api/v2/mix/order/detail",
+        Trades : "/api/v2/mix/order/fill-history",
+        klines : "/api/v2/mix/market/candles"
+    }
 
 
+    static isError(response){
+        return response.code > "00000";
+    }
 
-    // https://www.bitget.com/api-doc/contract/account/Get-Account-List
+
+/**
+* Fetches user balance from the exchange
+* @async
+* @returns {Promise<{coins: Array}>} - User Balance-data.
+* @see https://www.bitget.com/api-doc/contract/account/Get-Account-List
+*/
+
+
     static async fetchBalanceOnExchange() {
-        const endPoint = "/api/v2/mix/account/accounts";
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Balance, {});
     
-            console.log("Response From API:", response);
+            if (this.isError(response)) {
+                console.error("Error message from exchange:", response.msg || "Unknown error");
+                throw new Error(response.msg || "Unknown error occured");
+            }
     
             let result = { coins: [] };
     
@@ -82,10 +104,21 @@ class BitGetFuture_Service extends BitGet_Service {
     
 
 
+    /**
+     * Place an order from exchange
+     * @async
+     * @param {string} symbol symbol -  BTCUSDT
+     * @param {string} productType productType - USDT-FUTURES
+     * @param {string} marginCoin marginCoin - USDT
+     * @param {string} marginMode marginMode - isolated
+     * @param {number} size size - 1 , 2
+     * @param {string} side side - buy
+     * @param {string} orderType orderType - limit.
+     * @returns {Promise<object>} -  Order details in PlaceOrderResultFactory format.
+     * @see https://www.bitget.com/api-doc/contract/trade/Place-Order
+     */
 
-       // https://www.bitget.com/api-doc/contract/trade/Place-Order
        static async placeOrderOnExchange(symbol, productType, marginCoin, marginMode, size, side, orderType){
-        const endPoint = "/api/v2/mix/order/place-order";
         try {
             const params =  this.buildQueryParams({
                 symbol: symbol,
@@ -98,18 +131,17 @@ class BitGetFuture_Service extends BitGet_Service {
 
             });
 
-            const response = await this.callExchangeAPI(endPoint, params, "POST");
+            const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 
-            if (response.code > "00000") {
-                // console.log("Response Is Not OK:", response);
+            if (this.isError(response)) {
                 const errMsg = response.error ?? response.msg ?? JSON.stringify(response);
                 return PlaceOrderResultFactory.createFalseResult(errMsg, response);
-            } else {
-                console.log("Response is OK:", response);
-            }
+            };
+
+
+            console.log("Response is OK:", response);
 
             return await this.createSuccessPlaceOrderResult(response);
-            // return response;
         } catch (error) {
             console.error("Error Placing An Order:", error);
             throw error;
@@ -133,20 +165,26 @@ class BitGetFuture_Service extends BitGet_Service {
         }
     }
 
-    // https://www.bitget.com/api-doc/contract/trade/Get-Orders-Pending
-    static async pendingOrders(productType){
-        const endPoint = "/api/v2/mix/order/orders-pending";
-        try {
 
+    /**
+     * Fetches open or pending order from exchange.
+     * @async
+     * @param {string} productType productType - USDT-FUTURES
+     * @returns {Promise<object>} - List of Open Orders.
+     * @see https://www.bitget.com/api-doc/contract/trade/Get-Orders-Pending
+     */
+
+
+    static async pendingOrders(productType){
+        try {
             const params = this.buildQueryParams({
                 productType: productType
             })
-            const response =  await this.callExchangeAPI(endPoint, params);
+            const response =  await this.callExchangeAPI(this.endPoints.Pending_Order, params);
 
-            if (response.code > "00000") {
-                console.log("Response Is Not OK:", response);
-            } else {
-                console.log("Response is OK:", response);
+            if (this.isError(response)) {
+                console.error("Error message from exchange:", response.msg || "Unknown error");
+                throw new Error(response.msg || "Unknown error occured");
             }
 
             return response;
@@ -157,9 +195,18 @@ class BitGetFuture_Service extends BitGet_Service {
     }
     
 
-    // https://www.bitget.com/api-doc/contract/trade/Cancel-Order
+    /**
+     * Cancels an existing order from exchange.
+     * @async
+     * @param {string} symbol symbol -  BTCUSDT
+     * @param {string} productType productType - USDT-FUTURES
+     * @param {string} orderId Order ID.
+     * @returns {Promise<object>} - Status of Order Cancellation
+     * @see https://www.bitget.com/api-doc/contract/trade/Cancel-Order
+     */
+
+
     static async cancelOrderFromExchange(symbol, productType, orderId){
-        const endPoint = "/api/v2/mix/order/cancel-order";
         try {
             const params = this.buildQueryParams({
                 symbol: symbol,
@@ -167,30 +214,35 @@ class BitGetFuture_Service extends BitGet_Service {
                 orderId: orderId
             });
     
-            const response = await this.callExchangeAPI(endPoint, params, "POST");
+            const response = await this.callExchangeAPI(this.endPoints.Cancel_Order, params, "POST");
 
             console.log("Response", response);
     
 
-            if (response.code > "00000") {
-                const errMsg = response[3] ?? JSON.stringify(response);
+            if (this.isError(response)) {
+                const errMsg = response.msg ?? JSON.stringify(response);
                 return new CancelOrderResult(false, errMsg, response);
 
-            } else {
-                console.log("Response is OK:", response);
-                return new CancelOrderResult(true, "Success", response);
-                // return response
-            }
-            // return response;
+            };
+
+            return new CancelOrderResult(true, "Success", response);
         } catch (error) {
             console.error("Error Cancelling Orders:", error);
             throw error;
         }
     }
     
-    // https://www.bitget.com/api-doc/contract/trade/Get-Order-Details
+    /**
+     * Fetches Order Details from exchange
+     * @async
+     * @param {string} symbol symbol -  BTCUSDT
+     * @param {string} productType productType - USDT-FUTURES
+     * @param {string} orderId Order ID.
+     * @returns {Promise<object>} - Order details
+     * @see https://www.bitget.com/api-doc/contract/trade/Get-Order-Details
+     */
+
     static async fetchOrderFromExchange(symbol, productType, orderId){    
-        const endPoint = "/api/v2/mix/order/detail";
         try {
             const params = this.buildQueryParams({
                 symbol: symbol,
@@ -198,16 +250,17 @@ class BitGetFuture_Service extends BitGet_Service {
                 orderId: orderId
             });
 
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.Fetch_Order, params);
 
-            if (response.code > "00000") {
-                console.log("Response Is Not OK:", response);
+            if (this.isError(response)) {
+                console.error("Error message from exchange:", response.msg || "Unknown error");
+                throw new Error(response.msg || "Unknown error occured");
             }
+
             console.log("Response Is Not OK:", response);
 
 
             return this.createFetchOrderResultFromResponse(response);
-            // return response;
         } catch (error) {
             console.error("Error fetching Order:", error);
             throw error;
@@ -247,31 +300,32 @@ class BitGetFuture_Service extends BitGet_Service {
     }
     
     
-    
 
-    // Pending form here...!
+    /**
+     * Fetches recent trades from exchange
+     * @async
+     * @param {string} productType productType - USDT-FUTURES.
+     * @returns {Promise<object>} - List of recent trades.
+     * @see https://www.bitget.com/api-doc/contract/trade/Get-Fill-History
+     */
     
-
-    // https://www.bitget.com/api-doc/contract/trade/Get-Fill-History
     static async loadTradesForClosedOrder(productType){
-        const endPoint = "/api/v2/mix/order/fill-history";
-
         try {
             const params = this.buildQueryParams({
                 productType: productType
             });
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.Trades, params);
 
 
-            if (response.code > "00000") {
-                console.log("Response Is Not OK:", response);
+            if (this.isError(response)) {
+                console.error("Error message from exchange:", response.msg || "Unknown error");
+                throw new Error(response.msg || "Unknown error occured");
             }
 
             console.log("Response ", response);
 
 
             return this.convertTradesToCcxtFormat(response ?? {});
-            return response;
         } catch (error) {
             console.error("Error fetching Trades:", error);
             throw error;
@@ -317,20 +371,29 @@ class BitGetFuture_Service extends BitGet_Service {
     
 
 
-    // https://www.bitget.com/api-doc/contract/market/Get-Candle-Data
+    /**
+     * Fetches candles market data from exchange
+     * @async
+     * @param {string} symbol symbol -  BTCUSDT
+     * @param {string} productType productType - USDT-FUTURES
+     * @param {string} granularity granularity - 1m, 2m
+     * @returns {Promise<object>} - List of candle data.
+     * @see https://www.bitget.com/api-doc/contract/market/Get-Candle-Data
+     */
+
     static async fetchKlines(symbol, productType, granularity){
-        const endPoint = "/api/v2/mix/market/candles";
         try {
             const params = this.buildQueryParams({
                 symbol: symbol,
                 productType : productType,
                 granularity: granularity
             });
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.klines, params);
 
 
-            if (response.code > "00000") {
-                console.log("Response Is Not OK:", response);
+            if (!response) {
+                console.error("Error message from exchange:", response.msg || "Unknown error");
+                throw new Error(response.msg || "Unknown error occured");
             }
 
             let klines = response.data.map(kline => [

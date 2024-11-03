@@ -3,6 +3,7 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
+import { Balance } from "@coinbase/coinbase-sdk";
 
 
 class BitGet_Service{
@@ -37,7 +38,31 @@ class BitGet_Service{
     }
 
 
-    // Authentication
+    static endPoints = {
+        Balance : "/api/v2/spot/account/assets",
+        Place_Order : "/api/v2/spot/trade/place-order",
+        Pending_Order : "/api/v2/spot/trade/unfilled-orders",
+        Cancel_Order : "/api/v2/spot/trade/cancel-order",
+        Fetch_Order : "/api/v2/spot/trade/orderInfo",
+        Trades : "/api/v2/spot/trade/fills",
+        klines : "/api/v2/spot/market/candles"
+    }
+
+
+    static isError(response){
+        return response.code > "00000";
+    }
+
+
+
+    /**
+     * @async
+     * @param {string} endPoint - Endpoint of the url.
+     * @param {string || number} params - Functions Paramaters 
+     * @param {string} method - HTTP Method
+     * @returns {Promise<authData>} - Authentication Headers
+     */
+
     static async Authentication(endPoint = null, params = {}, method = "GET"){
         const timeStamp = Date.now().toString();
         console.warn("ts:", timeStamp);
@@ -77,7 +102,14 @@ class BitGet_Service{
     }
 
 
-    // Call-Exchange-API
+/**
+* Exchange API Caller function. 
+* @async
+* @param {string} endPoint - Endpoint of the url.
+* @param {string || number} params - Functions Paramaters.
+* @param {string} method - HTTP Method.
+* @returns {Promise<object>} - Fetches data from the API.
+*/
     static async callExchangeAPI(endPoint, params, method = "GET"){
         try {
             const { headers, url } = await this.Authentication(endPoint, params, method);
@@ -102,17 +134,25 @@ class BitGet_Service{
     }
 
 
-    // https://bitgetlimited.github.io/apidoc/en/spot/#get-account-assets
+/**
+* Fetches user balance from the exchange
+* @async
+* @returns {Promise<{coins: Array}>} - User Balance-data.
+* @see https://bitgetlimited.github.io/apidoc/en/spot/#get-account-assets
+*/
+
     static async fetchBalanceOnExchange() {
-        const endPoint = "/api/v2/spot/account/assets";
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
-    
-            console.log("Response From API:", response);
+            const response = await this.callExchangeAPI(this.endPoints.Balance, {});
+
+            if(this.isError(response)){
+                console.error("Error message from response:", response.msg || "Unknown error");
+                throw new Error(response.msg || "Unknown error occured");
+            }
     
             let result = { coins: [] };
     
-            // Check if the response data is an array
+            // Checks if the response data is an array
             if (Array.isArray(response.data)) {
                 console.log("Account Data Array:", response.data);
     
@@ -148,10 +188,20 @@ class BitGet_Service{
     
 
 
+/**
+ * Places an order from exchange.
+ * @async
+ * @param {string} symbol  symbol - BTCUSDT_SPBL
+ * @param {string} orderType  orderType - limit
+ * @param {string} side  side - buy/sell
+ * @param {string} force  force - normal
+ * @param {number} price  price - price of order
+ * @param {number} quantity quantity - number of order
+ * @returns {Promise<Object>} - Order details in PlaceOrderResultFactory format
+ * @see https://bitgetlimited.github.io/apidoc/en/spot/#place-order
+ */
 
-       // https://bitgetlimited.github.io/apidoc/en/spot/#place-order
        static async placeOrderOnExchange(symbol, orderType, side, force, price, quantity){
-        const endPoint = "/api/v2/spot/trade/place-order";
         try {
             const params =  this.buildQueryParams({
                 symbol: symbol,
@@ -162,14 +212,14 @@ class BitGet_Service{
                 quantity: quantity
             });
 
-            const response = await this.callExchangeAPI(endPoint, params, "POST");
+            const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 
-            if (response.code > "00000") {
+            if (this.isError(response)) {
                 const errMsg = response.error ?? response.msg ?? JSON.stringify(response);
                 return PlaceOrderResultFactory.createFalseResult(errMsg, response);
-            } else {
-                console.log("Response is OK:", response);
             }
+
+            console.log("Response:", response);
 
             return await this.createSuccessPlaceOrderResult(response);
         } catch (error) {
@@ -195,17 +245,22 @@ class BitGet_Service{
         }
     }
 
-    // https://www.bitget.com/api-doc/spot/trade/Get-Unfilled-Orders
-    static async pendingOrders(){
-        const endPoint = "/api/v2/spot/trade/unfilled-orders";
-        try {
-            const response =  await this.callExchangeAPI(endPoint, {});
+/**
+ * Fetches Open Or Pending orders.
+ * @async
+ * @returns {Promise<object>} - List of Open orders.
+ * @see https://www.bitget.com/api-doc/spot/trade/Get-Unfilled-Orders
+ */
 
-            if (response.code > "00000") {
-                console.log("Response Is Not OK:", response);
-            } else {
-                console.log("Response is OK:", response);
+    static async pendingOrders(){
+        try {
+            const response =  await this.callExchangeAPI(this.endPoints.Pending_Order, {});
+
+            if(this.isError(response)){
+                console.error("Error message from response:", response.msg || "Unknown error");
+                throw new Error(response.error || "Unknown error occured");
             }
+            console.log("Response:", response)
 
             return response;
         } catch (error) {
@@ -215,50 +270,60 @@ class BitGet_Service{
     }
     
 
-    // https://www.bitget.com/api-doc/spot/trade/Cancel-Order
+    /**
+     * Cancels an order from exchange.
+     * @async
+     * @param {number} id - Order ID
+     * @param {string} symbol  symbol - BTCUSDT_SPBL
+     * @returns {Promise<object>} - Status of Order cancellation.
+     * @see https://www.bitget.com/api-doc/spot/trade/Cancel-Order
+     */
+
     static async cancelOrderFromExchange(id, symbol){
-        const endPoint = "/api/v2/spot/trade/cancel-order";
         try {
             const params = this.buildQueryParams({
                 id: id,
                 symbol: symbol
             });
     
-            const response = await this.callExchangeAPI(endPoint, params, "POST");
+            const response = await this.callExchangeAPI(this.endPoints.Cancel_Order, params, "POST");
     
 
-            if (response.code > "00000") {
-                const errMsg = response[3] ?? JSON.stringify(response);
+            if (this.isError(response)) {
+                const errMsg = response.error ?? response.msg ??  response[3] ?? JSON.stringify(response);
                 return new CancelOrderResult(false, errMsg, response);
+            } 
 
-            } else {
-                console.log("Response is OK:", response);
-                return new CancelOrderResult(true, "Success", response);
-                // return response
-            }
+            console.log("Response is OK:", response);
+            return new CancelOrderResult(true, "Success", response);
         } catch (error) {
             console.error("Error Cancelling Orders:", error);
             throw error;
         }
     }
     
-    // https://www.bitget.com/api-doc/spot/trade/Get-Order-Info
+    /**
+     * Fetches Order Details.
+     * @async
+     * @param {number} orderId - Order ID.
+     * @returns {Promise<Object>} - Order Details.
+     * @see https://www.bitget.com/api-doc/spot/trade/Get-Order-Info
+     */
+
     static async fetchOrderFromExchange(orderId){
-        const endPoint = "/api/v2/spot/trade/orderInfo";
         try {
             const params = this.buildQueryParams({
                 orderId: orderId
             });
 
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.Fetch_Order, params);
 
-            if (response.code > "00000") {
-                    const failureMsg =
-                      response?.sMsg ?? response.msg ?? "Unexpected response format or missing critical fields.";
+            if (this.isError(response)) {
+                    const failureMsg = response?.sMsg ?? response.msg ?? "Unexpected response format or missing critical fields.";
                     return FetchOrderResultFactory.createFalseResult(failureMsg);
             }
-            console.log("Response Is Not OK:", response);
 
+            console.log("Response Is Not OK:", response);
 
             return this.createFetchOrderResultFromResponse(response);
         } catch (error) {
@@ -294,28 +359,31 @@ static createFetchOrderResultFromResponse(response) {
 }
 
     
-    
+    /**
+     * Fetches recent trades.
+     * @async
+     * @param {string} symbol  symbol - BTCUSDT_SPBL
+     * @returns {Promise<object>} - List of recent Trades.
+     * @see https://www.bitget.com/api-doc/spot/trade/Get-Fills
+     */
 
-    // https://www.bitget.com/api-doc/spot/trade/Get-Fills
     static async loadTradesForClosedOrder(symbol){
-        const endPoint = "/api/v2/spot/trade/fills";
-
         try {
             const params = this.buildQueryParams({
                 symbol: symbol
             });
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.Trades, params);
 
 
-            if (response.code > "00000") {
-                console.log("Response Is Not OK:", response);
+            if (this.isError(response)) {
+                console.error("Error message from exchange:", response.msg || "Unknown error");
+                throw new Error(response.msg || "Unknown error occured");
             }
 
-            // console.log("Response Is Not OK:", response);
+            console.log("Response:", response);
 
 
             return this.convertTradesToCcxtFormat(response ?? {});
-            return response;
         } catch (error) {
             console.error("Error fetching Trades:", error);
             throw error;
@@ -361,19 +429,27 @@ static createFetchOrderResultFromResponse(response) {
     
 
 
-    // https://www.bitget.com/api-doc/spot/market/Get-Candle-Data
+    /**
+     * Fetches Klines data.
+     * @async
+     * @param {string} symbol symbol - BTCUSDT_SPBL
+     * @param {number} granularity - Candlestick line time unit
+     * @returns {Promise <Arrayt>} List of candles data.
+     * @see https://www.bitget.com/api-doc/spot/market/Get-Candle-Data
+     */
+
     static async fetchKlines(symbol, granularity){
-        const endPoint = "/api/v2/spot/market/candles";
         try {
             const params = this.buildQueryParams({
                 symbol: symbol,
                 granularity : granularity
             });
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.klines, params);
 
 
-            if (response.code > "00000") {
-                console.log("Response Is Not OK:", response);
+            if (!response) {
+                console.error("Error message from exchange:", response.msg || "Unknown error");
+                throw new Error(response.msg || "Unknown error occured");
             }
 
             let klines = response.data.map(kline => [
@@ -390,8 +466,6 @@ static createFetchOrderResultFromResponse(response) {
               klines.sort((a, b) => a[0] - b[0]); //Sorted By timestamp
 
             return klines;
-
-            return response;
         } catch (error) {
             console.error("Error fetching klines:", error);
             throw error;

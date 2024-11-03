@@ -4,6 +4,7 @@ import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import { console } from "inspector";
+import { response } from "express";
 
 // PENDING AUTH
 
@@ -33,7 +34,29 @@ class Crypto {
     return params;
   }
 
-            // AUTHENTICATION...
+  static endPoints = {
+    Balance : "private/user-balance",
+    Place_Order : "private/create-order",
+    Pending_Order : "private/get-open-orders",
+    Cancel_Order : "private/cancel-order",
+    Fetch_Order : "private/get-order-detail",
+    Trades : "private/get-trades",
+    klines : "public/get-candlestick"
+  }
+
+  static isError(response){
+    return !response.id;
+  }
+
+/**
+ * Authentication for this API.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - HTTP Method
+ * @returns {Promise<authData>} - Authentication url, request, and headers 
+ */
+
   static async Authentication(endPoint = null, params = {}, method = "GET") {
     const api_key = process.env.API_KEY_Crypto;
     const secret_key = process.env.SECRECT_KEY_Crypto;
@@ -84,7 +107,15 @@ class Crypto {
   }
 
 
-  //CALL-EXCHANGE-API
+/**
+ * Exchange API Caller function.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - Function Method
+ * @returns {Promise<Object>} - Fetches data from the API.
+ */
+
   static async callExchangeAPI(endPoint, params, method = "GET") {
     try {
       const { headers, url, request } = await this.Authentication(
@@ -110,11 +141,23 @@ class Crypto {
     }
   }
 
-  // https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-user-balance
+/**
+ * Fecthes User balance from the exchange.
+ * @async
+ * @param {string} account_uuid  account_uuid -  Universal Unique Identifier.
+ * @returns {Promise<{coins: Array}>} - User Balance-data
+ * @see  https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-user-balance
+ */
+
+
 static async fetchBalanceOnExchange() {
-    const endPoint = "private/user-balance";
     try {
-        const response = await this.callExchangeAPI(endPoint, {}, "POST");
+        const response = await this.callExchangeAPI(this.endPoints.Balance, {}, "POST");
+
+        if (this.isError(response)) {
+          console.error("Error message from response", response.message || "Unknown error");
+          throw new Error(response.message || "Unknown error occuried");
+        };
 
         console.log("Response From Balance API:", response);
 
@@ -155,11 +198,19 @@ static async fetchBalanceOnExchange() {
     }
 }
 
+/**
+ * Places an order from exchange
+ * @async
+ * @param {string} instrument_name - Trading-Pair : BTCUSD-PERP
+ * @param {string} side - BUY / SELL
+ * @param {string} type - LIMIT / MARKET
+ * @param {string} quantity - Order Quantity
+ * @param {string} price - Order Price
+ * @returns {Promise<object>} -  Order details in PlaceOrderResultFactory format.
+ * @see https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-create-order
+ */
 
-
-  // https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-create-order
   static async placeOrderOnExchange(instrument_name, side, type, quantity, price) {
-    const endPoint = "private/create-order";
     try {
       const params = this.buildQueryParams({
         instrument_name: instrument_name,
@@ -169,9 +220,9 @@ static async fetchBalanceOnExchange() {
         price: price,
       });
 
-      const response = await this.callExchangeAPI(endPoint, params, "POST");
+      const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 
-      if (!response.id) {
+      if (this.isError(response)) {
       console.log("Response From Pending Order", response);
         const errMsg =
           response.error ?? response.message ?? JSON.stringify(response);
@@ -180,7 +231,6 @@ static async fetchBalanceOnExchange() {
       console.log("Response From Pending Order", response);
 
         return await this.createSuccessPlaceOrderResult(response);  
-    //   return response;
     } catch (error) {
       console.error("Error Placing An Order", error);
       throw error;
@@ -204,14 +254,25 @@ static async fetchBalanceOnExchange() {
     }
   }
 
-  // https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-get-open-orders
+  /**
+   * Fetches Open or Pending order details from exchange
+   * @async
+   * @param {string} instrument_name - Trading-Pair : BTCUSD-PERP
+   * @returns {Promise<object>} - List of open orders
+   * @see https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-get-open-orders
+   */
+
   static async pendingOrders(instrument_name) {
-    const endPoint = "private/get-open-orders";
     try {
       const params = this.buildQueryParams({
         instrument_name: instrument_name,
       });
-      const response = await this.callExchangeAPI(endPoint, params, "POST");
+      const response = await this.callExchangeAPI(this.endPoints.Pending_Order, params, "POST");
+
+      if (this.isError(response)) {
+        console.error("Error message from response", response.message || "Unknown error");
+        throw new Error(response.message || "Unknown error occuried");
+      };
 
       console.log("Response From Pending Order", response);
 
@@ -222,21 +283,28 @@ static async fetchBalanceOnExchange() {
     }
   }
 
-  // https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-cancel-order
+  /**
+   * Cancels an existing order from exchange
+   * @async
+   * @param {number} order_id - Order ID
+   * @param {numbbet || string} client_oid - Client Order ID
+   * @returns {Promise<object>} - Status of order cancellation.
+   * @see https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-cancel-order
+   */
+
+
   static async cancelOrderFromExchange(order_id, client_oid = null) {
-    const endPoint = "private/cancel-order";
     try {
       const params = this.buildQueryParams({
         order_id: order_id,
-        client_oid: client_oid || null
+        client_oid: client_oid
       });
 
-      const response = await this.callExchangeAPI(endPoint, params, "POST");
+      const response = await this.callExchangeAPI(this.endPoints.Cancel_Order, params, "POST");
 
-      if (!response.id) {
-        console.log("Response From Pending Order", response);
+      if (this.isError(response)) {
         const errMsg =
-          response.error ?? response.msg ?? JSON.stringify(response);
+          response.error ?? response.message ?? JSON.stringify(response);
         return new CancelOrderResult(false, errMsg, response);
       }
         console.log("Response From Pending Order", response);
@@ -248,32 +316,31 @@ static async fetchBalanceOnExchange() {
     }
   }
 
-  // https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-get-order-detail
+  /**
+   * Fetches order details from exchange
+   * @async
+   * @param {number} order_id - Order ID
+   * @returns {Promise<object>} - Order Details.
+   * @see https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-get-order-detail
+   */
+
   static async fetchOrderFromExchange(order_id) {
-    const endPoint = "private/get-order-detail";
     try {
       const params = this.buildQueryParams({
         order_id: order_id
       });
 
-      const response = await this.callExchangeAPI(endPoint, params, "POST");
+      const response = await this.callExchangeAPI(this.endPoints.Fetch_Order, params, "POST");
 
-      if (!response.id) {
-      console.log("Response ", response);
-
-        const failureMsg =
-          response?.message ??
-          response.message ??
-          "Unexpected response format or missing critical fields.";
+      if (this.isError(response)) {
+        const failureMsg = response?.message ?? "Unexpected response format or missing critical fields.";
         return FetchOrderResultFactory.createFalseResult(failureMsg);
         
       }
 
       console.log("Response ", response);
 
-
       return this.createFetchOrderResultFromResponse(response);
-      return response;
     } catch (error) {
       console.error("Error Fetching Order Details", error);
       throw error;
@@ -298,20 +365,26 @@ static async fetchBalanceOnExchange() {
     );
   }
 
-  //   https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-get-trades
-static async loadTradesForClosedOrder(instrument_name) {
-    const endPoint = "private/get-trades";
 
+  /**
+   * Fetches recent orders from exchange.
+   * @async
+   * @param {string} instrument_name - Trading-Pair : BTCUSD-PERP
+   * @returns {Promise<object>} - List of trades
+   * @see  https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-get-trades
+   */
+
+static async loadTradesForClosedOrder(instrument_name) {
     try {
         const params = this.buildQueryParams({
             instrument_name: instrument_name,
         });
-        const response = await this.callExchangeAPI(endPoint, params, "POST");
+        const response = await this.callExchangeAPI(this.endPoints.Trades, params, "POST");
 
-        if (response.code !== 0) {
-            console.log("Response Is Not OK:", response);
-            return [];
-        }
+        if (this.isError(response)) {
+          console.error("Error message from response", response.message || "Unknown error");
+          throw new Error(response.message || "Unknown error occuried");
+        };
 
         console.log("Response ", response);
         return this.convertTradesToCcxtFormat(response);
@@ -357,20 +430,27 @@ static async convertTradesToCcxtFormat(trades = {}) {
     }
 }
 
+/**
+ * Fetches candles data from exchange
+ * @async
+ * @param {string} instrument_name - Trading-Pair : BTCUSD-PERP
+ * @param {string} period - time period : 1m, 2m
+ * @returns  {Promise<object>} - List of Candle Data.
+ * @see https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#public-get-candlestick
+ */
 
-  // https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#public-get-candlestick
   static async fetchKlines(instrument_name, period) {
-    const endPoint = "public/get-candlestick";
     try {
       const params = this.buildQueryParams({
         instrument_name: instrument_name,
         period: period,
       });
-      const response = await this.callExchangeAPI(endPoint, params, "GET");
+      const response = await this.callExchangeAPI(this.endPoints.klines, params, "GET");
 
-      if (response.error) {
-        console.error("Response From API", response);
-      }
+      if (!response) {
+        console.error("Error message from response", response.message || "Unknown error");
+        throw new Error(response.message || "Unknown error occuried");
+      };
 
       let klines = response.result.data.map((kline) => ({
         Time: kline.t,

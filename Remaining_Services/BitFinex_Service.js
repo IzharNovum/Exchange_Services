@@ -34,6 +34,30 @@ class BitFinex_Service{
         return params;
     }
 
+    static endPoints = {
+        Balance : "v2/auth/r/wallets",
+        Place_Order : "v2/auth/w/order/submit",
+        Pending_Order : "v2/auth/r/orders",
+        Cancel_Order : "v2/auth/w/order/cancel",
+        Fetch_Order : "v2/auth/w/order/update",
+        Trades : "v2/auth/r/trades/hist",
+        
+    }
+    
+    static isError(response){
+        return response[0] === "error";
+    }
+
+
+ 
+/**
+ * Authentication for this API.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - HTTP Method
+ * @returns {Promise<authData>} - Authentication Headers 
+ */
 
     static async Authentication(endPoint = null, params = {}, method = "POST") {
     const uri = this.getBaseUrl();
@@ -63,6 +87,14 @@ class BitFinex_Service{
     };
 }
 
+/**
+ * Exchange API Caller function.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - Function Method
+ * @returns {Promise<Object>} -  Fetches data from the API.
+ */
 static async callExchangeAPI(endPoint, params, method = "POST") {
     try {
         const { headers, url } = await this.Authentication(endPoint, params, method);
@@ -90,31 +122,38 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
 
 
 
-    // https://docs.bitfinex.com/reference/rest-auth-wallets
-    static async fetchBalanceOnExchange(){
-        const endPoint = "v2/auth/r/wallets";
-        try {
-            const response = await this.callExchangeAPI(endPoint, {});
+/**
+ * Fetches user balance from the exchange
+ * @async
+ * @returns {Promise<{coins: Array}>}    User-Balance data.
+ * @see https://docs.bitfinex.com/reference/rest-auth-wallets
+ */
 
-            if(response[0] === "error"){
-                console.log("Error Message From Response:", response.error);
+    static async fetchBalanceOnExchange(){
+        try {
+            const response = await this.callExchangeAPI(this.endPoints.Balance, {});
+
+            if(this.isError(response)){
+                console.error("Error Message From Response:", response.error || "Unknown error");
+                throw new Error(response.error || "An Unknown error occured");
               }
 
               let result = { coins: [] };
     
               // Check if the response data is an array
-              if (Array.isArray(response.data)) {
-                  console.log("Account Data Array:", response.data);
+              if (Array.isArray(response)) {
+                  console.log("Account Data Array:", response);
       
-                  response.data.forEach((coinInfo) => {
-                      let availBal = coinInfo.available ? parseFloat(coinInfo.available) : 0;
-                      let frozenBal = coinInfo.frozen ? parseFloat(coinInfo.frozen) : 0;
+                  response.forEach((coinInfo) => {
+                      let availBal = parseFloat(coinInfo.AVAILABLE_BALANCE) || 0;
+                      let frozenBal = parseFloat(coinInfo.BALANCE || 0) - parseFloat(coinInfo.AVAILABLE_BALANCE || 0);
+                      let total = parseFloat(coinInfo.BALANCE) || 0;
       
                       result.coins.push({
-                          coin: coinInfo.coinName || "N/A", 
+                          coin: coinInfo.CURRENCY || "N/A", 
                           free: availBal,
                           used: frozenBal,
-                          total: availBal + frozenBal,
+                          total: total,
                       });
                   });
               }
@@ -138,10 +177,18 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
 
     
 
+    /**
+     * Places an order from exchange
+     * @async
+     * @param {string} symbol symbol - BTC-USDT
+     * @param {string} type type - BUY, LIMIT
+     * @param {number} price Price - Price of the order
+     * @param {number} amount amount - amount of the order
+     * @returns {Promise<Object>} - Order details in PlaceOrderResultFactory format
+     * @see https://docs.bitfinex.com/reference/rest-auth-submit-order
+     */
 
-    // https://docs.bitfinex.com/reference/rest-auth-submit-order
     static async placeOrderOnExchange(symbol, type, price, amount){
-        const endPoint = "v2/auth/w/order/submit";
         try {
             const params =  this.buildQueryParams({
                 symbol: symbol,
@@ -150,14 +197,11 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
                 amount: amount
             });
 
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.Place_Order, params);
 
-            if (response[0] === "error") {
-                // console.log("Response Is Not OK:", response);
+            if (this.isError(response)) {
                 const errMsg = response.error ?? response.msg ?? JSON.stringify(response);
                 return PlaceOrderResultFactory.createFalseResult(errMsg, response);
-            } else {
-                console.log("Response is OK:", response);
             }
 
             return await this.createSuccessPlaceOrderResult(response);
@@ -184,17 +228,25 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
         }
     }
 
-    // https://docs.bitfinex.com/reference/rest-auth-retrieve-orders
-    static async pendingOrders(){
-        const endPoint = "v2/auth/r/orders";
-        try {
-            const response =  await this.callExchangeAPI(endPoint, {});
 
-            if (response[0] === "error") {
-                console.log("Response Is Not OK:", response);
-            } else {
-                console.log("Response is OK:", response);
-            }
+    /**
+     * Fetches Open Or Pending orders.
+     * @async
+     * @returns {Promise<Array>} List of open orders with order details.
+     * @see https://docs.bitfinex.com/reference/rest-auth-retrieve-orders
+     */
+
+
+    static async pendingOrders(){
+        try {
+            const response =  await this.callExchangeAPI(this.endPoints.Pending_Order, {});
+
+            if (this.isError(response)) {
+                console.error("Error Message from response:", response.error || "Unknown error");
+                throw new Error(response.error || "An unknown error occured");
+            };
+
+            console.log("Response:", response);
 
             return response;
         } catch (error) {
@@ -204,44 +256,58 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
     }
     
 
-    // https://docs.bitfinex.com/reference/rest-auth-cancel-order
+
+    /**
+     * Cancels an existing order from exchange.
+     * @async
+     * @param {number} id -  Order ID.
+     * @returns {Promise<object>} - Status of order cancellation.
+     * @see https://docs.bitfinex.com/reference/rest-auth-cancel-order
+     */
+
+
     static async cancelOrderFromExchange(id){
-        const endPoint = "v2/auth/w/order/cancel";
         try {
             const params = this.buildQueryParams({
                 id: id
             });
 
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.Cancel_Order, params);
     
 
-            if (response[0] === "error") {
-                const errMsg = response[3] ?? JSON.stringify(response);
+            if (this.isError(response)) {
+                const errMsg = response.error ?? response[3] ?? JSON.stringify(response);
                 return new CancelOrderResult(false, errMsg, response);
 
-            } else {
-                console.log("Response is OK:", response);
+            };
+
+                console.log("Response:", response);
                 return new CancelOrderResult(true, "Success", response);
-            }
         } catch (error) {
             console.error("Error Cancelling Orders:", error);
             throw error;
         }
     }
     
-    // https://docs.bitfinex.com/reference/rest-auth-update-order
+
+    /**
+     * Fetches Order details from exchange.
+     * @async
+     * @param {number} id  -   Order ID.
+     * @returns {Promise<object>} -  Order Details.
+     * @see   https://docs.bitfinex.com/reference/rest-auth-update-order
+     */
+
     static async fetchOrderFromExchange(id){
-        const endPoint = "v2/auth/w/order/update";
         try {
             const params = this.buildQueryParams({
                 id: id
             });
 
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.Fetch_Order, params);
 
-            if (response[0] === "error") {
-                const failureMsg =
-                response?.sMsg ?? response.msg ?? "Unexpected response format or missing critical fields.";
+            if (this.isError(response)) {
+                const failureMsg = response?.sMsg ?? response.msg ?? "Unexpected response format or missing critical fields.";
               return FetchOrderResultFactory.createFalseResult(failureMsg);
             }
 
@@ -272,16 +338,22 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
       }
     
 
-    // https://docs.bitfinex.com/reference/rest-auth-trades
+      /**
+       * Fetches my recent trades.
+       * @async
+       * @returns {Promise<object>} - List of recent trades.
+       * @see https://docs.bitfinex.com/reference/rest-auth-trades
+       */
+
     static async loadTradesForClosedOrder(){
-        const endPoint = "v2/auth/r/trades/hist";
 
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Trades, {});
 
 
-            if (response[0] === "error") {
-                console.log("Response Is Not OK:", response);
+            if (this.isError(response)) {
+                console.error("Error Message from response:", response.error || "Unknown error");
+                throw new Error(response.error || "An unknown error occured");
             }
 
             return this.convertTradesToCcxtFormat(response ?? {});
@@ -334,7 +406,16 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
     }
 
 
-    // https://docs.bitfinex.com/reference/rest-public-candles
+    /**
+     * Fetches market candles in clears
+     * @async 
+     * @param {string} candle 
+     * @param {string} section 
+     * @returns {Promise <Arrayt>} List of candles data.
+     * @see https://docs.bitfinex.com/reference/rest-public-candles
+     */
+
+    // 
     static async fetchKlines(candle, section){
         const endPoint = `/v2/candles/${candle}/${section}`;
 
@@ -345,8 +426,9 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
             const data = await fetch(url, options);
             const response = await data.json();
 
-            if (response[0] === "error") {
-                console.log("Response Is Not OK:", response);
+            if (!response) {
+                console.error("Error message from response:", response.error || "Unknown error");
+                throw new Error(response.error || "Unknown error occured")
             }
 
             let klines = response.map(kline => [
@@ -362,7 +444,6 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
 
 
             console.log("Response:", klines);
-
             return klines;
         } catch (error) {
             console.error("Error fetching klines:", error);
@@ -378,5 +459,5 @@ static async callExchangeAPI(endPoint, params, method = "POST") {
 }
 
 
-// BitFinex_Service.fetchBalanceOnExchange();
+
 export default BitFinex_Service;

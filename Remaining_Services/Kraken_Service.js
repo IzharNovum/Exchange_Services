@@ -13,6 +13,28 @@ class Kraken {
     return params;
   }
 
+  static endPoints = {
+    Balance : "BalanceEx",
+    Place_Order : "AddOrder",
+    Pending_Order : "OpenOrders",
+    Cancel_Order : "CancelOrder",
+    Fetch_Order : "QueryOrders",
+    Trades : "TradesHistory",
+    klines : "" //Defined in function.
+  }
+
+  static isError(response){
+    return !response?.result || (Array.isArray(response.error) && response.error.length > 0);
+  }
+
+/**
+ * Authentication for this API.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - HTTP Method
+ * @returns {Promise<authData>} - Authentication data. 
+ */
   static async Authentication(endPoint = null, params = {}, method = "GET") {
     const nonce = Date.now().toString();
     const baseUrl = this.getBaseUrl();
@@ -71,6 +93,14 @@ class Kraken {
     };
   }
 
+  /**
+ * Exchange API Caller function.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - Function Method
+ * @returns {Promise<Object>} - Fetches data from the API.
+ */
   static async callExchangeAPI(endPoint, params, method = "GET") {
     try {
       const { headers, url, body, queryString } = await this.Authentication(
@@ -101,15 +131,22 @@ class Kraken {
       throw error;
     }
   }
+  /**
+ * Fecthes User balance from the exchange.
+ * @async
+ * @returns {Promise<{coins: Array}>} - User Balance-data
+ * @see https://docs.kraken.com/api/docs/rest-api/get-account-balance
+ */
 
-  // https://docs.kraken.com/api/docs/rest-api/get-account-balance
+
   static async fetchBalanceOnExchange() {
-    const endPoint = "BalanceEx";
     try {
-      const response = await this.callExchangeAPI(endPoint, {}, "POST");
-      if (!response.result) {
-        console.error("Response Is Not OK", response);
-      }
+      const response = await this.callExchangeAPI(this.endPoints.Balance, {}, "POST");
+
+      if (this.isError(response)) {
+        console.error("Error message from response", response.error || "Unknown error");
+        throw new Error(response.error || "Unknown error occuried");
+      };
 
       let result = { coins: [] };
 
@@ -153,9 +190,18 @@ class Kraken {
     }
   }
 
-  // https://docs.kraken.com/api/docs/rest-api/add-order
+      /**
+       * Places an order from exchange
+       * @async
+       * @param {string} ordertype - market / limit
+       * @param {string} type - buy / sell
+       * @param {string} volume - order quantity
+       * @param {string} pair - Trading pair : BTCUSDT
+       * @param {string} price - order price
+       * @returns {Promise<Object>} - Details of the placed order.
+       * @see https://docs.kraken.com/api/docs/rest-api/add-order
+       */
   static async placeOrderOnExchange(ordertype, type, volume, pair, price) {
-    const endPoint = "AddOrder";
     try {
       const params = this.buildQueryParams({
         ordertype: ordertype,
@@ -165,7 +211,7 @@ class Kraken {
         price: price,
       });
 
-      const response = await this.callExchangeAPI(endPoint, params, "POST");
+      const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 
       if (!response.result) {
         const errMgs = response.error ?? JSON.stringify(response);
@@ -198,14 +244,20 @@ class Kraken {
     }
   }
 
-  // https://docs.kraken.com/api/docs/rest-api/get-open-orders
-  static async pendingOrders() {
-    const endPoint = "OpenOrders";
-    try {
-      const response = await this.callExchangeAPI(endPoint, {}, "POST");
+  /**
+ * Fecthes open or pending orders from the exchange.
+ * @async
+ * @returns {Promise<{object}>} - List of pending orders.
+ * @see  https://docs.kraken.com/api/docs/rest-api/get-open-orders
+ */
 
-      if (!response.result) {
-        console.error("Response is not OK", response);
+  static async pendingOrders() {
+    try {
+      const response = await this.callExchangeAPI(this.endPoints.Pending_Order, {}, "POST");
+
+      if (this.isError(response)) {
+        const errMgs = response.msg ?? JSON.stringify(response);
+        return errMgs;
       }
 
       // console.log("Success Response From API:", response);
@@ -217,18 +269,25 @@ class Kraken {
     }
   }
 
-  // https://docs.kraken.com/api/docs/rest-api/cancel-order
+  /**
+   * Cancels an existing order from exchange
+   * @async
+   * @param {string} cl_ord_id - Client ID
+   * @param {string} txid - Transactio ID
+   * @returns {Promise<object>} - Status of Order cancellation
+   * @see https://docs.kraken.com/api/docs/rest-api/cancel-order
+   */
+
   static async cancelOrderFromExchange(cl_ord_id, txid) {
-    const endPoint = "CancelOrder";
     try {
       const params = this.buildQueryParams({
         cl_ord_id: cl_ord_id, //can remove this if not needed..
         txid: txid, //this txtid is the transaction id..
       });
 
-      const response = await this.callExchangeAPI(endPoint, params, "POST");
+      const response = await this.callExchangeAPI(this.endPoints.Cancel_Order, params, "POST");
 
-      if (!response.result) {
+      if (this.isError(response)) {
         const errMsg = response.msg ?? JSON.stringify(response);
         return new CancelOrderResult(false, errMsg, response);
       }
@@ -241,17 +300,23 @@ class Kraken {
     }
   }
 
-  // https://docs.kraken.com/api/docs/rest-api/get-orders-info
+      /**
+     * Fetches Order details from exchange
+     * @async
+     * @param {string} txid - Transactio ID
+     * @returns {Promise<object>} - Order details
+     * @see https://docs.kraken.com/api/docs/rest-api/get-orders-info
+     */
+  // 
   static async fetchOrderFromExchange(txid) {
-    const endPoint = "QueryOrders";
     try {
       const params = this.buildQueryParams({
         txid: txid, //this is similar to order_id..
       });
 
-      const response = await this.callExchangeAPI(endPoint, params, "POST");
+      const response = await this.callExchangeAPI(this.endPoints.Fetch_Order, params, "POST");
 
-      if (!response.result) {
+      if (this.isError(response)) {
         const errMgs = response.msg ?? JSON.stringify(response);
         return FetchOrderResultFactory.createFalseResult(errMgs);
       }
@@ -284,13 +349,17 @@ class Kraken {
     );
   }
 
-  // https://docs.kraken.com/api/docs/rest-api/get-trade-history
+      /**
+     * Fetches recent trades from exchange
+     * @async
+     * @returns {Promise<object>} - Order details
+     * @see https://docs.kraken.com/api/docs/rest-api/get-trade-history
+     */
   static async loadTradesForClosedOrder() {
-    const endPoint = "TradesHistory";
     try {
-      const response = await this.callExchangeAPI(endPoint, {}, "POST");
+      const response = await this.callExchangeAPI(this.endPoints.Trades, {}, "POST");
 
-      if (!response.result) {
+      if (this.isError(response)) {
         const errMgs = response.msg ?? JSON.stringify(response);
         return errMgs;
       }
@@ -358,7 +427,14 @@ class Kraken {
     }
   }
 
-  // https://docs.kraken.com/api/docs/rest-api/get-ohlc-data
+    /**
+     * Fetches market candle data from exchange
+     * @async
+     * @param {string} pair - Trading pair : BTCUSDT
+     * @param {string} interval - time range : 1, 2, 3
+     * @returns {Promise<object>} - List of market candles.
+     * @see https://docs.kraken.com/api/docs/rest-api/get-ohlc-data
+     */
   static async fetchKlines(interval) {
     const url = "https://api.kraken.com/0/public/OHLC";
 
