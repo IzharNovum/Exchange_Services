@@ -42,7 +42,30 @@ class huobiExchange{
         return params;
     }
 
-        // AUTHENTICATION HEADER
+    static endPoints = {
+        Account : "/v1/account/accounts",
+        Balance:(accountId) => `/v1/account/accounts/${accountId}/balance`,
+        Place_Order: "/v1/order/orders/place",
+        Pending_Order: "/v1/order/openOrders",
+        Cancel_Order:(orderID) => `/v1/order/orders/${orderID}/submitcancel`,
+        Fetch_Order:(orderID) => `/v1/order/orders/${orderID}`,
+        Trades: "/v1/order/history",
+        klines: "/market/history/kline",
+      };
+    
+      static isError(response) {
+        return !response || response.status !== "ok" || response.code !== 200 ;
+      }
+      
+    
+      /**
+       * Authentication for this API.
+       * @async
+       * @param {string} endPoint - Url endpoint.
+       * @param {string || number} params - Function parameters.
+       * @param {string} method - HTTP Method
+       * @returns {Promise<authData>} - Authentication Headers
+       */
     static async authentication(endPoint = "", params = {}, method = "GET") {
         const now = new Date();
         const isoFormat = now.toISOString().replace(/\.\d{3}Z$/, "");
@@ -77,7 +100,14 @@ class huobiExchange{
     }
 
 
-    // CALL EXCHANGE API...
+  /**
+   * Exchange API Caller function.
+   * @async
+   * @param {string} endPoint - Url endpoint.
+   * @param {string || number} params - Function parameters.
+   * @param {string} method - Function Method
+   * @returns {Promise<Object>} -  Fetches data from the API.
+   */
     static async callExchangeAPI(endPoint, params, method = "GET") {
         try {
             const { url, body } = await this.authentication(endPoint, params, method);
@@ -112,67 +142,50 @@ class huobiExchange{
         }
     }
 
-    
-    // https://huobiapi.github.io/docs/spot/v1/en/#get-all-accounts-of-the-current-user
-    static async accountDetails() {
-        const endPoint = "/v1/account/accounts";
+    /**
+     * Fetches Account Details from exchange
+     * @async
+     * @returns {Promise<object>} - Account Details
+     * @see https://huobiapi.github.io/docs/spot/v1/en/#get-all-accounts-of-the-current-user
+     */
+    static async accountDetails(){
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Account, {});
             console.log("Full Response:", response);
 
-            if (response.status !== "ok") {
+            if (this.isError(response)) {
                 //LOGS AN ERROR...
-                await sendLogs.exchangeError.error( "No Response!", endPoint, this.userName);
+                await sendLogs.exchangeError.error( "No Response!", this.endPoints.Account, this.userName);
                 console.error("Response Is Not OK!", response["err-msg"]);
                 throw new Error(`API Error: ${response["err-msg"]}`);
             }
     
         //SUCCESS LOG...
-        await sendLogs.exchangeInfo.info( 'Successfully Fetched Account Details!', endPoint, this.userName);
+        await sendLogs.exchangeInfo.info( 'Successfully Fetched Account Details!', this.endPoints.Account, this.userName);
         return response;
         } catch (error) {
         //LOGS AN ERROR...
-        await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
+        await sendLogs.exchangeError.error(`${error.message}`, this.endPoints.Account, this.userName);
         console.error("Error fetching balance:", error.message);
         throw error;
         }
     }
 
-    // https://huobiapi.github.io/docs/spot/v1/en/#get-the-total-valuation-of-platform-assets
-    static async accountValue(){
-        const endPoint = "/v2/account/valuation";
+    /**
+     * Fetchs User Balance from exchange
+     * @async
+     * @param {number} accountId - Account ID
+     * @returns {Promise<object>} - User balance
+     * @see https://huobiapi.github.io/docs/spot/v1/en/#get-account-balance-of-a-specific-account
+     */
+
+    static async fetchBalanceOnExchange(accountId){
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Balance(accountId), {});
 
-
-            if (response.success !== true) {
+            if(this.isError(response)){
                 //LOGS AN ERROR...
-                await sendLogs.exchangeError.error("No Response!", endPoint, this.userName);
-                console.error("Response Is Not OK!", response["err-msg"]);
-                throw new Error(`API Error: ${response["err-msg"]}`);
-            }
-            
-            //SUCCESS LOG...
-            await sendLogs.exchangeInfo.info('Operation Successfull!', endPoint, this.userName);
-            return response;
-        } catch (error) {
-        //LOGS AN ERROR...
-        await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
-        console.error("Error fetching balance:", error.message);
-        throw error;
-        }
-    }
-
-    // https://huobiapi.github.io/docs/spot/v1/en/#get-account-balance-of-a-specific-account
-    static async fetchBalanceOnExchange() {
-        const accountId = "62926999";
-        const endPoint = `/v1/account/accounts/${accountId}/balance`
-        try {
-            const response = await this.callExchangeAPI(endPoint, {});
-
-            if(!response){
-                //LOGS AN ERROR...
-                await sendLogs.exchangeError.error( "No Response!", endPoint, this.userName);
+                await sendLogs.exchangeError.error( "No Response!", this.endPoints.Balance(accountId), this.userName);
                 console.warn("Response Is Not OK!", response);
               } 
                 let result = { coins: [] };
@@ -218,46 +231,55 @@ class huobiExchange{
         }
 
         //SUCCESS LOG...
-        await sendLogs.exchangeInfo.info("Successfully Fetched Balance!", endPoint, this.userName);
+        await sendLogs.exchangeInfo.info("Successfully Fetched Balance!", this.endPoints.Balance(accountId), this.userName);
         return result;
         } catch (error) {
         //LOGS AN ERROR...  
-        await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
+        await sendLogs.exchangeError.error(`${error.message}`, this.endPoints.Balance(accountId), this.userName);
         console.error("Error fetching balance:", error.message);
         throw error;
         }
     }
-    
   
-    // https://huobiapi.github.io/docs/spot/v1/en/#place-a-new-order
-    static async placeOrderOnExchange(){
-        const endPoint = "/v1/order/orders/place";
+    /**
+     * Places order from exchange
+     * @async
+     * @param {number} accountId - Account ID
+     * @param {string} symbol - Trading Pair: btcusdt
+     * @param {string} type - buy-limit
+     * @param {number} amount - amount of the order
+     * @param {number} price - Price of the order
+     * @returns {Promise<object>} - Details of placed Order.
+     * @see https://huobiapi.github.io/docs/spot/v1/en/#place-a-new-order
+     */
+
+    static async placeOrderOnExchange(accountId, symbol, type, amount, price){
         try {
             const params = this.buildQueryParams({
-                "account-id" : 62926999,
-                symbol: "btcusdt",
-                type: "buy-limit",
-                amount: "10.1",
-                price: "6095.65" 
+                "account-id" : accountId,
+                symbol: symbol,
+                type: type,
+                amount: amount,
+                price: price 
             });
 
-            const response = await this.callExchangeAPI(endPoint, params, "POST");
+            const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 
-            if (response.status !== "0k") {
+            if (this.isError(response)) {
                 const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
             //LOGS AN ERROR...
-            await sendLogs.exchangeError.error(`${msg}`, endPoint, this.userName);
+            await sendLogs.exchangeError.error(`${msg}`, this.endPoints.Place_Order, this.userName);
             return PlaceOrderResultFactory.createFalseResult(msg, response);
               };
 
             const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
 
             //SUCCESS LOG...
-            await sendLogs.exchangeInfo.info(`${msg || "Order Placed!"}`, endPoint, this.userName); 
+            await sendLogs.exchangeInfo.info(`${msg || "Order Placed!"}`, this.endPoints.Place_Order, this.userName); 
             return await this.createSuccessPlaceOrderResult(response);
         } catch (error) {
         //LOGS AN ERROR...
-        await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
+        await sendLogs.exchangeError.error(`${error.message}`, this.endPoints.Place_Order, this.userName);
         console.warn("Error Placing An Order!", error.message);
         throw new error;
         }
@@ -282,75 +304,88 @@ class huobiExchange{
     }
 
     
-
-    // https://huobiapi.github.io/docs/spot/v1/en/#get-all-open-orders
+  /**
+   * Fetches Open Or Pending orders.
+   * @async
+   * @returns {Promise<Array>} List of open orders with order details.
+   * @see https://huobiapi.github.io/docs/spot/v1/en/#get-all-open-orders
+   */
     static async pendingOrders(){
-        const endPoint = "/v1/order/openOrders";
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Pending_Order, {});
 
-            if (response.status !== "ok") {
+            if (this.isError(response)) {
                 //LOGS AN ERROR...
-                await sendLogs.exchangeError.error("No Response!", endPoint, this.userName);
+                await sendLogs.exchangeError.error("No Response!", this.endPoints.Pending_Order, this.userName);
                 console.error("Response Is Not OK!", response);
             }
 
           //SUCCESS LOG...
-          await sendLogs.exchangeInfo.info("Successfully Fetched Pending Order!", endPoint, this.userName);
+          await sendLogs.exchangeInfo.info("Successfully Fetched Pending Order!", this.endPoints.Pending_Order, this.userName);
           return response;
         } catch (error) {
           //LOGS AN ERROR...
-          await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
+          await sendLogs.exchangeError.error(`${error.message}`, this.endPoints.Pending_Order, this.userName);
           console.warn("Error Fetching Pending Orders!", error.message);
           throw new error;
         }
     }
 
-    // https://huobiapi.github.io/docs/spot/v1/en/#submit-cancel-for-an-order
+    /**
+   * Cancels an existing order from exchange.
+   * @async
+   * @param {number} orderId -  Order ID.
+   * @returns {Promise<object>} - Status of order cancellation.
+   * @see https://huobiapi.github.io/docs/spot/v1/en/#submit-cancel-for-an-order
+   */
+ 
     static async cancelOrderOnExchange(orderID) {
-        orderID = orderID;
-        const endPoint = `/v1/order/orders/${orderID}/submitcancel`;
         try {
-            const response = await this.callExchangeAPI(endPoint, {}, "POST");
+            const response = await this.callExchangeAPI(this.endPoints.Cancel_Order(orderID), {}, "POST");
     
-            if (response.status !== "ok") {
+            if (this.isError(response)) {
                 const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
                 //LOGS AN ERROR...
-                await sendLogs.exchangeError.error(`${msg}`, endPoint, this.userName);
+                await sendLogs.exchangeError.error(`${msg}`, this.endPoints.Cancel_Order(orderID), this.userName);
                 return new CancelOrderResult(false, msg, response);
             }
     
             //SUCCESS LOG...
-            await sendLogs.exchangeInfo.info("Order Cancelled!", endPoint, this.userName);
+            await sendLogs.exchangeInfo.info("Order Cancelled!", this.endPoints.Cancel_Order(orderID), this.userName);
             return new CancelOrderResult(true, "Success", response);
         } catch (error) {
             //LOGS AN ERROR...
-            await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
+            await sendLogs.exchangeError.error(`${error.message}`, this.endPoints.Cancel_Order(orderID), this.userName);
             console.warn("Error Cancelling An Order!", error.message);
             throw new error;
         }
     }
 
-    // https://huobiapi.github.io/docs/spot/v1/en/#get-the-order-detail-of-an-order
+    /**
+   * Fetches Order details from exchange.
+   * @async
+   * @param {number} orderId -  Order ID.
+   * @returns {Promise<object>} -  Order Details.
+   * @see https://huobiapi.github.io/docs/spot/v1/en/#get-the-order-detail-of-an-order
+   */
+
     static async fetchOrderFromExchange(orderID){
-        orderID = "233948934";
-        const endPoint = `/v1/order/orders/${orderID}`;
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Fetch_Order(orderID), {});
     
-            if (response.status !== "ok") {
+            if (this.isError(response)) {
                 const failureMsg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
                 // LOGS AN ERROR...
-                await sendLogs.exchangeError.error(`${failureMsg}`, endPoint, this.userName);
+                await sendLogs.exchangeError.error(`${failureMsg}`, this.endPoints.Fetch_Order(orderID), this.userName);
                 return FetchOrderResultFactory.createFalseResult(failureMsg);
             }
     
             //SUCCESS LOG...
-            await sendLogs.exchangeInfo.info("Order Fetch Successfull!", endPoint, this.userName);
+            await sendLogs.exchangeInfo.info("Order Fetch Successfull!", this.endPoints.Fetch_Order(orderID), this.userName);
             return await this.createFetchOrderResultFromResponse(response);
         } catch (error) {
             //LOGS AN ERROR...
-            await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
+            await sendLogs.exchangeError.error(`${error.message}`, this.endPoints.Fetch_Order(orderID), this.userName);
             console.warn("Error Fetching Order Details!", error.message);
             throw new error;
         }
@@ -373,34 +408,37 @@ class huobiExchange{
       );
       } catch (error) {
         // WARN LOG...
-        await sendLogs.exchangeWarn.warn("Failed To Format The Response", endPoint, this.userName);
+        await sendLogs.exchangeWarn.warn("Failed To Format The Response", this.endPoints.Fetch_Order(orderID), this.userName);
         console.warn("Error Fetching Order Details!", error.message);
         throw new error;
       }
     }
 
-
-    // https://huobiapi.github.io/docs/spot/v1/en/#search-historical-orders-within-48-hours
+  /**
+   * Fetches my recent trades.
+   * @async
+   * @returns {Promise<object>} - List of recent trades.
+   * @see https://huobiapi.github.io/docs/spot/v1/en/#search-historical-orders-within-48-hours
+   */
     static async loadTradesForClosedOrder() {
-        const endPoint = "/v1/order/history";
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Trades, {});
             // console.log("responsne:", response)
     
-            if (response.status !== "ok") {
+            if (response.status !== "ok"){
                 const failureMsg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
                 //LOGS AN ERROR...
-                await sendLogs.exchangeError.error(`${failureMsg}`, endPoint, this.userName);
+                await sendLogs.exchangeError.error(`${failureMsg}`, this.endPoints.Trades, this.userName);
                 console.error("Response Is Not OK!", response["err-msg"]);
                 throw new Error(`API Error: ${response["err-msg"]}`);
             }
 
         //SUCCESS LOG...
-        await sendLogs.exchangeInfo.info('Operation Succesfull!', endPoint, this.userName);
+        await sendLogs.exchangeInfo.info('Operation Succesfull!', this.endPoints.Trades, this.userName);
         return this.convertTradesToCcxtFormat(response ?? {});
         } catch (error) {
         //LOGS AN ERROR...
-        await sendLogs.exchangeError.error(`${error.message}`, endPoint, this.userName);
+        await sendLogs.exchangeError.error(`${error.message}`, this.endPoints.Trades, this.userName);
         console.error("Error Fetching Trades", error);
         throw new error;
         }
@@ -432,29 +470,34 @@ class huobiExchange{
             return ccxtTrades;
         } catch (error) {
             // WARN LOG...
-            await sendLogs.exchangeWarn.warn("Failed To Format The Response", endPoint, this.userName);
+            await sendLogs.exchangeWarn.warn("Failed To Format The Response", this.endPoints.Trades, this.userName);
             console.warn("Error Fetching Order Details!", error.message);
             throw new error;
             
         }
     }
     
-    
-    // https://huobiapi.github.io/docs/spot/v1/en/#get-klines-candles
-    static async fetchKlines(){
-        const endPoint = "/market/history/kline";
+    /**
+     * Fetches market candles from exchange
+     * @async
+     * @param {string} symbol - Trading Pair: btcusdt
+     * @param {string} period - Time range : 1min
+     * @returns {Promise <Array>} List of candles data.
+     * @see https://huobiapi.github.io/docs/spot/v1/en/#get-klines-candles
+     */
+    static async fetchKlines(symbol, period){
         try {
             const params = this.buildQueryParams({
-                symbol : "btcusdt",
-                period : "1min",
+                symbol : symbol,
+                period : period,
             });
 
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.klines, params);
 
             if (response.status !== "ok") {
                 const failureMsg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
                 //LOGS AN ERROR...
-                await sendLogs.exchangeError.error(`${failureMsg}`, endPoint, this.userName);
+                await sendLogs.exchangeError.error(`${failureMsg}`, this.endPoints.klines, this.userName);
                 console.error("Response Is Not OK!", response["err-msg"]);
                 throw new Error(`API Error: ${response["err-msg"]}`);
             }
@@ -473,11 +516,11 @@ class huobiExchange{
               klines.sort((a, b) => a.id - b.id); //Sorted By ID
           
             //SUCCESS LOG...
-            await sendLogs.exchangeInfo.info( 'Operation Succesfull!', endPoint, this.userName);
+            await sendLogs.exchangeInfo.info( 'Operation Succesfull!', this.endPoints.klines, this.userName);
             return klines;
         } catch (error) {
             //LOGS AN ERROR...
-            await sendLogs.exchangeError.error( `${error.message}`, endPoint, this.userName);
+            await sendLogs.exchangeError.error( `${error.message}`, this.endPoints.klines, this.userName);
             console.error("Error Fetching Klines!", error);
             throw new error;
         }

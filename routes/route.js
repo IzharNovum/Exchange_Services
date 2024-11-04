@@ -39,7 +39,7 @@ const routes = [
     }},
     { path: "/Okex-Service/place-order", handler: async (req, res) => {
         try {
-            const PlaceOrder = await OkexService.placeOrderOnExchange();
+            const PlaceOrder = await OkexService.placeOrderOnExchange("BTC-USDT", "cash", "buy", "limit", 2.15, 1, "base_ccy");
             res.json(PlaceOrder);
         } catch (error) {
             //LOG ERROR...
@@ -50,7 +50,7 @@ const routes = [
     }},
     { path: "/Okex-Service/cancel-order", handler: async (req, res) => {
         try {
-            const CancelOrder = await OkexService.cancelOrderFromExchange();
+            const CancelOrder = await OkexService.cancelOrderFromExchange("BTC-USDT", 1756032454621872128);
             res.json(CancelOrder);
         } catch (error) {
             //LOG ERROR...
@@ -61,7 +61,7 @@ const routes = [
     }},
     { path: "/Okex-Service/fetch-order", handler: async (req, res) => {
         try {
-            const FetchOrder = await OkexService.fetchOrderFromExchange();
+            const FetchOrder = await OkexService.fetchOrderFromExchange("BTC-USDT", 1756032454621872128);
             res.json(FetchOrder);
         } catch (error) {
             //LOG ERROR...
@@ -83,7 +83,7 @@ const routes = [
     }},
     { path: "/Okex-Service/Klines", handler: async (req, res) => {
         try {
-            const Klines = await OkexService.fetchKlines();
+            const Klines = await OkexService.fetchKlines('BTC-USDT', "1m");
             res.json(Klines);
         } catch (error) {
             //LOG ERROR...
@@ -131,7 +131,7 @@ const routes = [
   }},
   { path: "/Huobi-Service/balance", handler: async (req, res) => {
       try {
-          const CancelOrder = await HuobiService.fetchBalanceOnExchange();
+          const CancelOrder = await HuobiService.fetchBalanceOnExchange(62926999);
           res.json(CancelOrder);
       } catch (error) {
           //LOG ERROR...
@@ -142,7 +142,7 @@ const routes = [
   }},
   { path: "/Huobi-Service/place-order", handler: async (req, res) => {
       try {
-          const FetchOrder = await HuobiService.placeOrderOnExchange();
+          const FetchOrder = await HuobiService.placeOrderOnExchange(62926999, "btcusdt", "buy-limit", 10.1, 6885.21);
           res.json(FetchOrder);
       } catch (error) {
           //LOG ERROR...
@@ -164,7 +164,7 @@ const routes = [
   }},
   { path: "/Huobi-Service/cancel-order", handler: async (req, res) => {
       try {
-          const Klines = await HuobiService.cancelOrderOnExchange();
+          const Klines = await HuobiService.cancelOrderOnExchange(233948934);
           res.json(Klines);
       } catch (error) {
           //LOG ERROR...
@@ -175,7 +175,7 @@ const routes = [
   }},
   { path: "/Huobi-Service/fetch-order", handler: async (req, res) => {
       try {
-          const order = await HuobiService.fetchOrderFromExchange();
+          const order = await HuobiService.fetchOrderFromExchange(233948934);
           res.json(order);
       } catch (error) {
           //LOG ERROR...
@@ -197,7 +197,7 @@ const routes = [
 }},
 { path: "/Huobi-Service/klines", handler: async (req, res) => {
     try {
-        const order = await HuobiService.fetchKlines();
+        const order = await HuobiService.fetchKlines("btcusdt", "1min");
         res.json(order);
     } catch (error) {
         console.log("Caught error:", error);
@@ -223,7 +223,7 @@ const routes = [
 
         { path: "/Binance-Service/place-order", handler: async (req, res) => {
             try {
-                const order = await BinanceService.placeOrderOnExchange();
+                const order = await BinanceService.placeOrderOnExchange("BTCUSDT", "BUY", "LIMIT", 30000, 1, "GTC");
                 res.json(order);
             } catch (error) {
                 //LOG ERROR...
@@ -247,7 +247,7 @@ const routes = [
 
         { path: "/Binance-Service/cancel-order", handler: async (req, res) => {
             try {
-                const order = await BinanceService.cancelOrderFromExchange();
+                const order = await BinanceService.cancelOrderFromExchange("BTCUSDT", "2711992218");
                 res.json(order);
             } catch (error) {
                 //LOG ERROR...
@@ -259,7 +259,7 @@ const routes = [
 
         { path: "/Binance-Service/fetch-order", handler: async (req, res) => {
             try {
-                const order = await BinanceService.fetchOrderFromExchange();
+                const order = await BinanceService.fetchOrderFromExchange("BTCUSDT", "2711992218");
                 res.json(order);
             } catch (error) {
                 //LOG ERROR...
@@ -271,7 +271,7 @@ const routes = [
 
         { path: "/Binance-Service/trades", handler: async (req, res) => {
             try {
-                const order = await BinanceService.loadTradesForClosedOrder();
+                const order = await BinanceService.loadTradesForClosedOrder("BTCUSDT");
                 res.json(order);
             } catch (error) {
                 //LOG ERROR...
@@ -283,7 +283,7 @@ const routes = [
 
         { path: "/Binance-Service/klines", handler: async (req, res) => {
             try {
-                const order = await BinanceService.fetchKlines();
+                const order = await BinanceService.fetchKlines("BTCUSDT", "1s");
                 res.json(order);
             } catch (error) {
                 //LOG ERROR...
@@ -292,94 +292,6 @@ const routes = [
                 res.status(500).json({ error: "Failed to fetch Kline details" });
             }
         }},
-
-
-                            //ROUTES FOR BINANCE SERVICES......
-
-        { path: "/Binance-Service/balance", handler: async (req, res) => {
-            try {
-                const order = await BinanceService.fetchBalanceOnExchange();
-                res.json(order);
-            } catch (error) {
-                //LOG ERROR...
-                await sendLogs.exchangeDebug.debug(error.message, "/Binance-Service/balance", userName);
-                console.error("Error fetching balance details:", error.message);
-                res.status(500).json({ error: "Failed to fetch balance details" });
-            }
-        }},
-
-        { path: "/Binance-Service/place-order", handler: async (req, res) => {
-            try {
-                const order = await BinanceService.placeOrderOnExchange();
-                res.json(order);
-            } catch (error) {
-                //LOG ERROR...
-                await sendLogs.exchangeDebug.debug(error.message, "/Binance-Service/place-order", userName);
-                console.error("Error placing an order:", error.message);
-                res.status(500).json({ error: "Failed to place an order" });
-            }
-        }},
-
-        { path: "/Binance-Service/pending-order", handler: async (req, res) => {
-            try {
-                const order = await BinanceService.pendingOrders();
-                res.json(order);
-            } catch (error) {
-                //LOG ERROR...
-                await sendLogs.exchangeDebug.debug(error.message, "/Binance-Service/pending-order", userName);
-                console.error("Error fetching pending order details:", error.message);
-                res.status(500).json({ error: "Failed to fetch pending order details" });
-            }
-        }},
-
-        { path: "/Binance-Service/cancel-order", handler: async (req, res) => {
-            try {
-                const order = await BinanceService.cancelOrderFromExchange();
-                res.json(order);
-            } catch (error) {
-                //LOG ERROR...
-                await sendLogs.exchangeDebug.debug(error.message, "/Binance-Service/cancel-order", userName);
-                console.error("Error cancelling order:", error.message);
-                res.status(500).json({ error: "Failed to cancel an order" });
-            }
-        }},
-
-        { path: "/Binance-Service/fetch-order", handler: async (req, res) => {
-            try {
-                const order = await BinanceService.fetchOrderFromExchange();
-                res.json(order);
-            } catch (error) {
-                //LOG ERROR...
-                await sendLogs.exchangeDebug.debug(error.message, "/Binance-Service/fetch-order", userName);
-                console.error("Error fetching order details:", error.message);
-                res.status(500).json({ error: "Failed to fetch order details" });
-            }
-        }},
-
-        { path: "/Binance-Service/trades", handler: async (req, res) => {
-            try {
-                const order = await BinanceService.loadTradesForClosedOrder();
-                res.json(order);
-            } catch (error) {
-                //LOG ERROR...
-                await sendLogs.exchangeDebug.debug(error.message, "/Binance-Service/trades", userName);
-                console.error("Error fetching trades:", error.message);
-                res.status(500).json({ error: "Failed to fetch trades" });
-            }
-        }},
-
-        { path: "/Binance-Service/klines", handler: async (req, res) => {
-            try {
-                const order = await BinanceService.fetchKlines();
-                res.json(order);
-            } catch (error) {
-                //LOG ERROR...
-                await sendLogs.exchangeDebug.debug(error.message, "/Binance-Service/Klines", userName);
-                console.error("Error fetching Kline details:", error.message);
-                res.status(500).json({ error: "Failed to fetch Kline details" });
-            }
-        }},
-
 
                     //ROUTES FOR TOKO-CRYPTO SERVICES......
 
