@@ -39,8 +39,28 @@ static buildQueryParams(params){
 }
 
 
+static endPoints = {
+    Place_Order : "/api/v1/orders",
+    Pending_Order : "/api/v1/orders",
+    Cancel_Order :(order_id) => `/api/v1/orders/${order_id}`,
+    Fetch_Order :(order_id) => `/api/v1/orders/${order_id}`,
+    Trades : "/api/v1/recentFills",
+    klines : "/api/v1/kline/query"
+  }
 
-    // AUTHENTICATION
+  static isError(response){
+    const HTTP_OK = 200000
+    return response.code !== HTTP_OK;
+  }
+
+/**
+ * Authentication for this API.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - HTTP Method
+ * @returns {Promise<authData>} - Authentication data. 
+ */
  static async Authentication(endPoint = null, params = {}, method = "GET"){
     const now = new Date();
     const timestamp = now.getTime();
@@ -77,7 +97,14 @@ static buildQueryParams(params){
 }
 
 
-    // CALL-EXCHANGE-API
+/**
+ * Exchange API Caller function.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - Function Method
+ * @returns {Promise<Object>} - Fetches data from the API.
+ */
     static async  callExchangeAPI(endPoint, params, method = "GET"){
     try {
         const header = await this.Authentication(endPoint, params, method);
@@ -105,12 +132,21 @@ static buildQueryParams(params){
     }
 }
 
+/**
+ * Places an order from exchange.
+ * @async
+ * @param {string} clientOid - Client ID
+ * @param {string} side  - buy / sell
+ * @param {string} symbol - Trading Pair : BTS-USDT
+ * @param {number} leverage - Calculate the margin 
+ * @param {number} price - Price of the order
+ * @param {number} size - Order Size
+ * @returns {Promise<Object>} - Details of placed order
+ * @see https://www.kucoin.com/docs/rest/futures-trading/orders/place-order
+ */
 
-// https://www.kucoin.com/docs/rest/futures-trading/orders/place-order
     static async placeOrderOnExchange(clientOid, side, symbol, leverage, price, size){
-        const endPoint = "/api/v1/orders";
         try {
-
             const params = this.buildQueryParams({
                 clientOid : clientOid,
                 side : side,
@@ -120,12 +156,12 @@ static buildQueryParams(params){
                 size: size
             });
 
-            const response = await this.callExchangeAPI(endPoint, params, "POST");
+            const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 
-            console.log("Response from API", response);
+            console.log("Response", response);
 
-            if(response.code !== 200000 || response.status !== 200){
-                const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+            if(this.isError(response)){
+                const msg = response.data?.[0]?.msg ?? response.msg ?? JSON.stringify(response);
                 return PlaceOrderResultFactory.createFalseResult(msg, response);
               }
 
@@ -154,12 +190,21 @@ static buildQueryParams(params){
         }
     }
     
-
-    // https://www.kucoin.com/docs/rest/futures-trading/orders/get-order-list
+    /**
+     * Fetches Open or Penidng order from exchange
+     * @async
+     * @returns {Promise<object>} - List of the pending orders
+     * @see https://www.kucoin.com/docs/rest/futures-trading/orders/get-order-list
+     */
     static async pendingOrders(){
-        const endPoint = "/api/v1/orders";
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Pending_Order, {});
+
+            if (this.isError(response)) {
+                console.error("Error message from response", response.msg || "Unknown error");
+                const errMgs = response.msg ?? JSON.stringify(response);
+                return errMgs;
+              }
 
             console.log("Response From API", response);
 
@@ -170,17 +215,21 @@ static buildQueryParams(params){
         }
     }
 
+/**
+ * Cancels an existing order from exchange
+ * @async
+ * @param {string} order_id - Order ID used in path
+ * @returns {Promise<object>} - Status of order cancellation.
+ * @see https://www.kucoin.com/docs/rest/futures-trading/orders/cancel-order-by-orderid
+ */
 
-    // https://www.kucoin.com/docs/rest/futures-trading/orders/cancel-order-by-orderid
     static async cancelOrderFromExchange(order_id){
-        const endPoint = `/api/v1/orders/${order_id}`;
-
         try {
-            const response = await this.callExchangeAPI(endPoint, {}, "DELETE");
+            const response = await this.callExchangeAPI(this.endPoints.Cancel_Order(order_id), {}, "DELETE");
 
             console.log("Response From API", response);
 
-            if(response.code !== 200000 || response.status !== 200){
+            if(this.isError(response)){
                 const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
                 return new CancelOrderResult(false, msg, response);
               }
@@ -193,16 +242,21 @@ static buildQueryParams(params){
     }
 
 
-    // https://www.kucoin.com/docs/rest/futures-trading/orders/get-order-details-by-orderid-clientoid
-    static async fetchOrderFromExchange(order_id){
-        const endPoint = `/api/v1/orders/${order_id}`;
+    /**
+     * Fetches order details form exchange
+     * @async
+     * @param {number} order_id - Order ID used in path
+     * @returns {Promise<object>} - Order Details
+     * @see https://www.kucoin.com/docs/rest/futures-trading/orders/get-order-details-by-orderid-clientoid
+     */
 
+    static async fetchOrderFromExchange(order_id){
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Fetch_Order(order_id), {});
 
             console.log("Response From API", response);
 
-            if (response.code !== 200000 || response.status !== 200) {
+            if (this.isError(response)) {
                 const failureMsg =
                   response?.sMsg ?? response.msg ?? "Unexpected response format or missing critical fields.";
                 return FetchOrderResultFactory.createFalseResult(failureMsg);
@@ -230,13 +284,21 @@ static buildQueryParams(params){
     }
     
 
-
-    // https://www.kucoin.com/docs/rest/futures-trading/fills/get-recent-filled-list
+    /**
+     * Fetches recent Trades details from exchange
+     * @async
+     * @returns {Promise<object>} - Recent trades details.
+     * @see https://www.kucoin.com/docs/rest/futures-trading/fills/get-recent-filled-list
+     */
     static async loadTradesForClosedOrder(){
-        const endPoint = "/api/v1/recentFills";
-
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Trades, {});
+
+            if (this.isError(response)) {
+                console.error("Error message from response", response.msg || "Unknown error");
+                const errMgs = response.msg ?? JSON.stringify(response);
+                return errMgs;
+              }
 
             console.log("Response From API", response);
 
@@ -276,23 +338,32 @@ static buildQueryParams(params){
         }
     }
 
-    // https://www.kucoin.com/docs/rest/futures-trading/market-data/get-klines
+
+    /**
+     * Fetches candles details form exchange
+     * @async
+     * @param {string} symbol - Trading Pair : BTS-USDT
+     * @param {number} granularity - Time range : 1, 2, 3 count as min
+     * @returns {Promise<object>} - list of market candles.
+     * @see https://www.kucoin.com/docs/rest/futures-trading/market-data/get-klines
+     */
+
     static async fetchKlines(symbol, granularity){
-        const endPoint = "/api/v1/kline/query";
         try {
             const params = this.buildQueryParams({
                 symbol: symbol,
                 granularity: granularity
             });
     
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.klines, params);
     
             console.log("Response from API:", response);
 
-            if (!response?.data) {
-                console.warn("No klines data found.");
-                return [];
-            }
+            if (this.isError(response)) {
+                console.error("Error message from response", response.msg || "Unknown error");
+                const errMgs = response.msg ?? JSON.stringify(response);
+                return errMgs;
+              }
             
     
             let klines = response.data.map(kline => [

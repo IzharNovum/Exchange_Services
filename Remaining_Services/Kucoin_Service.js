@@ -39,9 +39,30 @@ static buidlQueryParams(params){
     return params;
 }
 
+static endPoints = {
+    Balance: "/api/v1/accounts",
+    Place_Order : "/api/v1/orders",
+    Pending_Order : "/api/v1/limit/orders",
+    Cancel_Order :(orderId) => `/api/v1/orders/${orderId}`,
+    Fetch_Order :(orderId) => `/api/v1/orders/${orderId}`,
+    Trades : "/api/v1/limit/fills",
+    klines : "/api/v1/market/candles"
+  }
 
+  static isError(response){
+    const HTTP_OK = 200000
+    return response.code !== HTTP_OK;
+  }
 
-    // AUTHENTICATION
+/**
+ * Authentication for this API.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - HTTP Method
+ * @returns {Promise<authData>} - Authentication data. 
+ */
+
  static async Authentication(endPoint = null, params = {}, method = "GET"){
     const now = new Date();
     const timestamp = now.getTime();
@@ -77,8 +98,14 @@ static buidlQueryParams(params){
     }
 }
 
-
-    // CALL-EXCHANGE-API
+/**
+ * Exchange API Caller function.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - Function Method
+ * @returns {Promise<Object>} - Fetches data from the API.
+ */
     static async  callExchangeAPI(endPoint, params, method = "GET"){
     try {
         const header = await this.Authentication(endPoint, params, method);
@@ -107,15 +134,23 @@ static buidlQueryParams(params){
     }
 }
 
-    // https://www.kucoin.com/docs/rest/account/basic-info/get-account-list-spot-margin-trade_hf
-    static async fetchBalanceOnExchange(){
-        const endPoint = "/api/v1/accounts";
-        try {
-            const response = await this.callExchangeAPI(endPoint, {});
+/**
+ * Fecthes User balance from the exchange.
+ * @async
+ * @returns {Promise<{coins: Array}>} - User Balance-data
+ * @see  https://www.kucoin.com/docs/rest/account/basic-info/get-account-list-spot-margin-trade_hf
+ */
 
-            if(response.code !== 200000 || response.status !== 200){
-            console.warn("Response Is Not OK!", response);
+    static async fetchBalanceOnExchange(){
+        try {
+            const response = await this.callExchangeAPI(this.endPoints.Balance, {});
+
+            if(!response){
+                console.error("Error message from response", response.msg || "Unknown error");
+                const errMgs = response.msg ?? JSON.stringify(response);
+                return errMgs;
             }
+
             let result = { coins: [] };
 
             if (response?.data?.accountAssets && Array.isArray(response.data.accountAssets)) {
@@ -156,9 +191,18 @@ static buidlQueryParams(params){
         }
     }
 
-    // https://www.kucoin.com/docs/rest/spot-trading/orders/place-order
+/**
+ * Places an order from exchange.
+ * @async
+ * @param {string} clientOid - Client ID
+ * @param {string} side  - buy / sell
+ * @param {string} symbol - Trading Pair : BTS-USDT
+ * @param {number} price - Price of the order
+ * @param {number} size - Order Size
+ * @returns {Promise<Object>} - Details of placed order
+ * @see https://www.kucoin.com/docs/rest/spot-trading/orders/place-order
+ */
     static async placeOrderOnExchange(clientOid, side, symbol, price, size){
-        const endPoint = "/api/v1/orders";
         try {
             const params = this.buidlQueryParams({
                 clientOid : clientOid,
@@ -167,11 +211,11 @@ static buidlQueryParams(params){
                 price : price,
                 size: size
             })
-            const response = await this.callExchangeAPI(endPoint, params, "POST");
+            const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 
             console.log("Response from api", response);
 
-            if(response.status !== 200){
+            if(this.isError(response)){
                 const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
                 return PlaceOrderResultFactory.createFalseResult(msg, response);
               }
@@ -200,19 +244,23 @@ static buidlQueryParams(params){
         }
     }
 
-
-    // https://www.kucoin.com/docs/rest/spot-trading/orders/get-order-list
+/**
+ * Fetches Open or Penidng order from exchange
+ * @async
+ * @returns {Promise<object>} - List of the pending orders
+ * @see https://www.kucoin.com/docs/rest/spot-trading/orders/get-order-list
+ */
     static async pendingOrders(){
-        const endPoint = "/api/v1/limit/orders";
         try {
-
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Pending_Order, {});
 
             console.log("response from api:", response);
 
-            if(!response){
-                console.warn("Response Is Not OK!", response);
-              }
+            if(this.isError(response)){
+                console.error("Error message from response", response.msg || "Unknown error");
+                const errMgs = response.msg ?? JSON.stringify(response);
+                return errMgs;
+            }
 
           return response;
         } catch (error) {
@@ -221,17 +269,21 @@ static buidlQueryParams(params){
         }
     }
 
+/**
+ * Cancels an existing order from exchange
+ * @async
+ * @param {string} orderId - Order ID used in path
+ * @returns {Promise<object>} - Status of order cancellation.
+ * @see https://www.kucoin.com/docs/rest/spot-trading/orders/cancel-order-by-orderid
+ */
 
-    // https://www.kucoin.com/docs/rest/spot-trading/orders/cancel-order-by-orderid
     static async cancelOrderFromExchange(orderId){
-        const endPoint = `/api/v1/orders/${orderId}`;
         try {
-
-            const response = await this.callExchangeAPI(endPoint, {}, "DELETE");
+            const response = await this.callExchangeAPI(this.endPoints.Cancel_Order(orderId), {}, "DELETE");
 
             console.log("Response From API:", response);
 
-            if(response.code !== 200000 || response.code !== 200){
+            if(this.isError(response)){
                 const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
                 return new CancelOrderResult(false, msg, response);
               }
@@ -244,15 +296,20 @@ static buidlQueryParams(params){
     }
 
 
-    // https://www.kucoin.com/docs/rest/spot-trading/orders/get-order-details-by-orderid
+    /**
+     * Fetches order details form exchange
+     * @async
+     * @param {number} orderId - Order ID used in path
+     * @returns {Promise<object>} - Order Details
+     * @see https://www.kucoin.com/docs/rest/spot-trading/orders/get-order-details-by-orderid
+     */
     static async fetchOrderFromExchange(orderId){
-        const endPoint = `/api/v1/orders/${orderId}`;
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Fetch_Order(orderId), {});
 
             console.log("response from API", response);
 
-            if (response.code !== 200000 || response.code !== 200) {
+            if (this.isError(response)) {
                 const failureMsg =
                   response?.sMsg ?? response.msg ?? "Unexpected response format or missing critical fields.";
                 return FetchOrderResultFactory.createFalseResult(failureMsg);
@@ -281,16 +338,26 @@ static buidlQueryParams(params){
         );
       }
 
-    // https://www.kucoin.com/docs/rest/spot-trading/fills/get-recent-filled-list
-    static async loadTradesForClosedOrder(){
-        const endPoint = "/api/v1/limit/fills";
-        try {
-            const response = await this.callExchangeAPI(endPoint, {});
+    /**
+     * Fetches recent Trades details from exchange
+     * @async
+     * @returns {Promise<object>} - Recent trades details.
+     * @see https://www.kucoin.com/docs/rest/spot-trading/fills/get-recent-filled-list
+     */
 
+    static async loadTradesForClosedOrder(){
+        try {
+            const response = await this.callExchangeAPI(this.endPoints.Trades, {});
+
+            if(this.isError(response)){
+                console.error("Error message from response", response.msg || "Unknown error");
+                const errMgs = response.msg ?? JSON.stringify(response);
+                return errMgs;
+            }
 
             console.log("Response from API", response);
             
-        return this.convertTradesToCcxtFormat(response ?? {});
+            return this.convertTradesToCcxtFormat(response ?? {});
         } catch (error) {
             console.error("Error Fetching Trades", error);
             throw error;
@@ -327,18 +394,28 @@ static buidlQueryParams(params){
     }
 
 
-
-    // https://www.kucoin.com/docs/rest/spot-trading/market-data/get-klines
+    /**
+     * Fetches candles details form exchange
+     * @async
+     * @param {string} symbol - Trading Pair : BTS-USDT
+     * @param {string} type - Time range : 1min, 2min, 3min count as min
+     * @returns {Promise<object>} - list of market candles.
+     * @see https://www.kucoin.com/docs/rest/spot-trading/market-data/get-klines
+     */
     static async fetchKlines(symbol, type){
-        const endPoint = "/api/v1/market/candles";
         try {
             const params = this.buidlQueryParams({
                 symbol : symbol,
                 type: type
-
             })
             
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.klines, params);
+
+            if(!response){
+                    console.error("Error message from response", response.msg || "Unknown error");
+                    const errMgs = response.msg ?? JSON.stringify(response);
+                    return errMgs;
+            }
 
          //LOGS AN ERROR...
          if (Array.isArray(response.data) && response.data.length === 0) {

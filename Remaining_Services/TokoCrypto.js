@@ -3,7 +3,6 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
-import { interval } from "date-fns";
 
 
 
@@ -41,7 +40,29 @@ class TokoCrypto {
   }
 
 
-    //AUTHENTICATION
+  static endPoints = {
+    Balance: "/open/v1/account/spot",
+    Place_Order : "/open/v1/orders",
+    Pending_Order : "/open/v1/orders",
+    Cancel_Order : "/open/v1/orders/cancel",
+    Fetch_Order : "/open/v1/orders/detail",
+    Trades : "/open/v1/orders/trades",
+    klines : "" //Defined in the function
+  }
+
+  static isError(response){
+    const HTTP_OK = 0
+    return response.code !== HTTP_OK;
+  }
+
+/**
+ * Authentication for this API.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - HTTP Method
+ * @returns {Promise<authData>} - Authentication data. 
+ */
   static async AuthHeader(endPoint = null, params = {}, method = "GET") {
     const now = new Date();
     const timestamp = now.getTime();
@@ -102,7 +123,14 @@ class TokoCrypto {
   }
 
 
-    //   CALL EXCHANGE API
+/**
+ * Exchange API Caller function.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - Function Method
+ * @returns {Promise<Object>} - Fetches data from the API.
+ */
   static async callExchangeAPI(endPoint, params, method = "GET") {
     try {
       const { url, headers } = await this.AuthHeader(endPoint, params, method);
@@ -123,15 +151,21 @@ class TokoCrypto {
     }
   }
 
+/**
+ * Fecthes User balance from the exchange.
+ * @async
+ * @returns {Promise<{coins: Array}>} - User Balance-data
+ * @see  https://www.tokocrypto.com/apidocs/#account-information-signed
+ */
 
-//   https://www.tokocrypto.com/apidocs/#account-information-signed
   static async fetchBalanceOnExchange() {
-    const endPoint = "/open/v1/account/spot";
     try {
-        const response = await this.callExchangeAPI(endPoint, {});
+        const response = await this.callExchangeAPI(this.endPoints.Balance, {});
         
-        if (response.code !== 0) {
-            console.warn("Response Is Not OK!", response);
+        if (this.isError(response)) {
+            console.error("Error message from response", response.msg || "Unknown error");
+            const errMgs = response.msg ?? JSON.stringify(response);
+            return errMgs;
         }
 
         let result = { coins: [] };
@@ -169,11 +203,19 @@ class TokoCrypto {
     }
 }
 
+        /**
+         * Places an order from exchange
+         * @async
+         * @param {string} symbol - Trading Pair : MXUSDT
+         * @param {string} side - 1, 2
+         * @param {string} type - 1
+         * @param {number} quantity - quantity of the order
+         * @param {number} price - price of the order
+         * @returns {Promise<object>} - Details of placed order
+         * @see https://www.tokocrypto.com/apidocs/#new-order--signed
+         */
 
-        //   https://www.tokocrypto.com/apidocs/#new-order--signed
         static async placeOrderOnExchange(symbol, side, type, quantity, price){
-            const endPoint = "/open/v1/orders";
-
             try {
                 const params = this.buildQueryParams({
                     symbol : symbol,
@@ -183,14 +225,17 @@ class TokoCrypto {
                     price : price
                 })
 
-                const response = await this.callExchangeAPI(endPoint, params, "POST");
+                const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 
-                if(response.code !== 0 ){
+                if(this.isError(response)){
                     const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
                     return PlaceOrderResultFactory.createFalseResult(msg, response);
                 }
 
-                return await this.createSuccessPlaceOrderResult(response);
+                console.log("response:", response)
+
+                // return await this.createSuccessPlaceOrderResult(response);
+                return response
             } catch (error) {
                 console.error("Error Placing An Order!", error.msg);
                 throw error;
@@ -214,19 +259,24 @@ class TokoCrypto {
             }
         }
 
-
-        // https://www.tokocrypto.com/apidocs/#all-orders-signed
+    /**
+     * Fetches Open or Penidng order from exchange
+     * @async
+     * @param {string} symbol - Trading Pair : BTSUSDT.
+     * @returns {Promise<object>} - List of the pending orders
+     * @see https://www.tokocrypto.com/apidocs/#all-orders-signed
+     */
         static async pendingOrders(symbol){
-            const endPoint = "/open/v1/orders";
-
             try {
                 const params  = this.buildQueryParams({
                     symbol : symbol
                 })
-                const response = await this.callExchangeAPI(endPoint, params);
+                const response = await this.callExchangeAPI(this.endPoints.Pending_Order, params);
 
-                if(response.code !== 0 ){
-                    console.warn("Response Is Not OK!", response);
+                if(this.isError(response)){
+                  console.error("Error message from response", response.msg || "Unknown error");
+                  const errMgs = response.msg ?? JSON.stringify(response);
+                  return errMgs;
                 }
 
             return response;
@@ -236,17 +286,22 @@ class TokoCrypto {
             }
         }
 
-        // https://www.tokocrypto.com/apidocs/#cancel-order-signed
-        static async cancelOrderFromExchange(orderId){
-            const endPoint = "/open/v1/orders/cancel";
+        /**
+         * Cancels an existing order from exchange
+         * @async
+         * @param {number} orderId - Order ID
+         * @returns {Promise<object>} - Order details
+         * @see https://www.tokocrypto.com/apidocs/#cancel-order-signed
+         */
 
+        static async cancelOrderFromExchange(orderId){
             try {
                 const params = this.buildQueryParams({
                     orderId : orderId, //Fake OrderID
                 })
-                const response = await this.callExchangeAPI(endPoint, params, "POST");
+                const response = await this.callExchangeAPI(this.endPoints.Cancel_Order, params, "POST");
 
-                if(response.code !== 0){
+                if(this.isError(response)){
                     const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
                     return new CancelOrderResult(false, msg, response);
                 }
@@ -258,19 +313,23 @@ class TokoCrypto {
             }
         };
 
+/**
+ * Fetches order details from exchange
+ * @async
+ * @param {number} orderId - Order ID
+ * @returns {Promise<object>} - Order details
+ * @see https://www.tokocrypto.com/apidocs/#query-order-signed
+ */
 
-        // https://www.tokocrypto.com/apidocs/#query-order-signed
         static async fetchOrderFromExchange(orderId){
-            const endPoint = "/open/v1/orders/detail";
-
             try {
                 const params = this.buildQueryParams({
                     orderId : orderId, //Fake OrderID
                 });
 
-                const response = await this.callExchangeAPI(endPoint, params);
+                const response = await this.callExchangeAPI(this.endPoints.Fetch_Order, params);
 
-                if(response.code !== 0){
+                if(this.isError(response)){
                     const failureMsg =
                     response?.sMsg ?? response.msg ?? "Unexpected response format or missing critical fields.";
                   return FetchOrderResultFactory.createFalseResult(failureMsg);
@@ -299,18 +358,22 @@ class TokoCrypto {
           }
 
 
-        // https://www.tokocrypto.com/apidocs/#account-trade-list-signed
+      /**
+     * Fetches recent Trades details from exchange
+     * @async
+     * @param {string} symbol - Trading Pair : BTSUSDT.
+     * @returns {Promise<object>} - Recent trades details.
+     * @see https://www.tokocrypto.com/apidocs/#account-trade-list-signed
+     */
         static async loadTradesForClosedOrder(symbol){
-            const endPoint = "/open/v1/orders/trades";
-
             try {
                 const params =  this.buildQueryParams({
                     symbol : symbol
                 });
 
-                const response = await this.callExchangeAPI(endPoint, params);
+                const response = await this.callExchangeAPI(this.endPoints.Trades, params);
 
-                if(response.code !== 0 ){
+                if(this.isError(response)){
                     const failureMsg =
                     response?.sMsg ?? response.msg ?? "Unexpected response format or missing critical fields.";
                   return failureMsg;
@@ -353,7 +416,14 @@ class TokoCrypto {
         }
 
 
-        // https://www.tokocrypto.com/apidocs/#klinecandlestick-data
+/**
+ * Fetches market candles data from exchange
+ * @async
+ * @param {string} symbol - Trading Pair : BTCUSDT
+ * @param {string} interval - Time range : 1s, 2s
+ * @returns {Promise<object>} - List of candles data
+ * @see https://www.tokocrypto.com/apidocs/#klinecandlestick-data
+ */
         static async fetchKlines(symbol, interval) {
             const endPoint = "https://api.binance.com/api/v1/klines";
             try {
@@ -369,7 +439,7 @@ class TokoCrypto {
                 if (!response.ok) {
                     const error = await response.json();
                     console.warn("Response is not OK!", error);
-                    return; // Exit early if there is no data
+                    return;
                 }
         
                 const data = await response.json();

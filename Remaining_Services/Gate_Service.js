@@ -330,7 +330,7 @@ class Gate_Service{
       }
 
     /**
-     * Fetches recent Trades details form exchange
+     * Fetches recent Trades details from exchange
      * @async
      * @returns {Promise<object>} - Recent trades details.
      * @see https://www.gate.io/docs/developers/apiv4/en/#list-personal-trading-history

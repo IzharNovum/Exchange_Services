@@ -596,7 +596,7 @@ const routes = [
                             
                                     { path: "/Kucoin-Future/klines", handler: async (req, res) => {
                                         try {
-                                            const order = await Kucoin_Future.fetchKlines("BBTC-USDT", 1);
+                                            const order = await Kucoin_Future.fetchKlines("BTC-USDT", 1);
                                             res.json(order);
                                         } catch (error) {
                                             console.error("Error fetching Kline details:", error.message);

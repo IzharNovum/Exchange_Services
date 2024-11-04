@@ -37,12 +37,35 @@ class Mexc_Service{
     }
 
 
+    static endPoints = {
+        Balance: "/api/v3/account",
+        Place_Order : "/api/v3/orders",
+        Pending_Order : "/api/v3/openOrders",
+        Cancel_Order : "/api/v3/order",
+        Fetch_Order : "/api/v3/order",
+        Trades : "/api/v3/myTrades",
+        klines : "/api/v3/klines"
+      }
+    
+      static isError(response){
+        const HTTP_OK = 200
+        return response.code !== HTTP_OK;
+      }
+    
+    /**
+     * Authentication for this API.
+     * @async
+     * @param {string} endPoint - Url endpoint.
+     * @param {string || number} params - Function parameters.  
+     * @param {string} method - HTTP Method
+     * @returns {Promise<authData>} - Authentication data. 
+     */
+
     static async Authentication(endPoint = null, params = {}, method = "GET") {
         const timeStamp = Date.now().toString();
         const uri = this.getBaseUrl();    
         const api_key = process.env.API_KEY_Mexc;
         const secret_key = process.env.SECRECT_KEY_Mexc;
-        // Add timestamp and recvWindow to params
         params.timestamp = timeStamp;
     
         let queryString = "";
@@ -82,7 +105,14 @@ class Mexc_Service{
 
 
 
-    // Call-Exchange-API
+/**
+ * Exchange API Caller function.
+ * @async
+ * @param {string} endPoint - Url endpoint.
+ * @param {string || number} params - Function parameters.  
+ * @param {string} method - Function Method
+ * @returns {Promise<Object>} - Fetches data from the API.
+ */
     static async callExchangeAPI(endPoint, params, method = "GET"){
         try {
             const { headers, url } = await this.Authentication(endPoint, params, method);
@@ -106,13 +136,23 @@ class Mexc_Service{
         }
     }
 
+/**
+ * Fecthes User balance from the exchange.
+ * @async
+ * @returns {Promise<{coins: Array}>} - User Balance-data
+ * @see  https://mexcdevelop.github.io/apidocs/spot_v3_en/#account-information
+ */
 
-    // https://mexcdevelop.github.io/apidocs/spot_v3_en/#account-information
     static async fetchBalanceOnExchange() {
-        const endPoint = "/api/v3/account";
         try {
-            const response = await this.callExchangeAPI(endPoint, {});
+            const response = await this.callExchangeAPI(this.endPoints.Balance, {});
     
+            if(!response){
+                console.error("Error message from response", response.msg || "Unknown error");
+                const errMgs = response.msg ?? JSON.stringify(response);
+                return errMgs;
+            }
+
             console.log("Response From API:", response);
     
             let result = { coins: [] };
@@ -154,10 +194,19 @@ class Mexc_Service{
     
 
 
+/**
+ * Places an order from exchange.
+ * @async
+ * @param {string} symbol  - Trading Pair : BTS-USDT.
+ * @param {string} type - Limit, Market
+ * @param {string} side - Buy / Sell
+ * @param {string} price - Price of the order
+ * @param {string} quantity - quantity of the order.
+ * @returns {Promise<Object>} - Details of placed order
+ * @see https://mexcdevelop.github.io/apidocs/spot_v3_en/#new-order
+ */
 
-       // https://mexcdevelop.github.io/apidocs/spot_v3_en/#new-order
        static async placeOrderOnExchange(symbol, type, side, price, quantity){
-        const endPoint = "/api/v3/order";
         try {
             const params =  this.buildQueryParams({
                 symbol: symbol,
@@ -167,14 +216,14 @@ class Mexc_Service{
                 quantity: quantity
             });
 
-            const response = await this.callExchangeAPI(endPoint, params, "POST");
+            const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 
-            if (response.code !== "200") {
+            if (this.isError(response)) {
                 const errMsg = response.error ?? response.msg ?? JSON.stringify(response);
                 return PlaceOrderResultFactory.createFalseResult(errMsg, response);
-            } else {
-                console.log("Response is OK:", response);
-            }
+            };
+
+            console.log("Response is OK:", response);
 
             return await this.createSuccessPlaceOrderResult(response);
         } catch (error) {
@@ -200,21 +249,28 @@ class Mexc_Service{
         }
     }
 
-    // https://mexcdevelop.github.io/apidocs/spot_v3_en/#current-open-orders
+    /**
+     * Fetches Open or Penidng order from exchange
+     * @async
+     * @param {string} symbol - Trading Pair : BTS-USDT.
+     * @returns {Promise<object>} - List of the pending orders
+     * @see https://mexcdevelop.github.io/apidocs/spot_v3_en/#current-open-orders
+     */
     static async pendingOrders(symbol){
-        const endPoint = "/api/v3/openOrders";
         try {
             const params = this.buildQueryParams({
                 symbol: symbol
             });
 
-            const response =  await this.callExchangeAPI(endPoint, params);
-
-            if (response.code !== "200") {
-                console.log("Response Is Not OK:", response);
-            } else {
-                console.log("Response is OK:", response);
+            const response =  await this.callExchangeAPI(this.endPoints.Pending_Order, params);
+            
+            if(!response){
+                console.error("Error message from response", response.msg || "Unknown error");
+                const errMgs = response.msg ?? JSON.stringify(response);
+                return errMgs;
             }
+
+            console.log("Response:", response);
 
             return response;
         } catch (error) {
@@ -224,44 +280,59 @@ class Mexc_Service{
     }
     
 
-    // https://mexcdevelop.github.io/apidocs/spot_v3_en/#cancel-order
-    static async cancelOrderFromExchange(id, symbol){
-        const endPoint = "/api/v3/order";
+    /**
+     * Cancels an existing order from exchange
+     * @async
+     * @param {string} orderId - Order ID used in path
+     * @param {string} symbol - Trading Pair : BTS-USDT.
+     * @returns {Promise<object>} - Status of order cancellation.
+     * @see https://mexcdevelop.github.io/apidocs/spot_v3_en/#cancel-order
+     */
+
+    static async cancelOrderFromExchange(orderId, symbol){
         try {
             const params = this.buildQueryParams({
-                id: id,
+                orderId: orderId,
                 symbol: symbol
             });
     
-            const response = await this.callExchangeAPI(endPoint, params, "DELETE");
+            const response = await this.callExchangeAPI(this.endPoints.Cancel_Order, params, "DELETE");
     
 
-            if (response.code !== "200") {
-                const errMsg = response[3] ?? JSON.stringify(response);
+            if (this.isError(response)) {
+                const errMsg = response?.sMsg ?? response.msg ??JSON.stringify(response);
                 return new CancelOrderResult(false, errMsg, response);
+            };
 
-            } else {
-                console.log("Response is OK:", response);
-                return new CancelOrderResult(true, "Success", response);
-            }
+
+            console.log("Response is OK:", response);
+            return new CancelOrderResult(true, "Success", response);
         } catch (error) {
             console.error("Error Cancelling Orders:", error);
             throw error;
         }
     }
     
-    // https://mexcdevelop.github.io/apidocs/spot_v3_en/#query-order
+
+    /**
+     * Fetches order details form exchange
+     * @async
+     * @param {string} symbol - Trading Pair : BTS-USDT.
+     * @param {number} orderId - Order ID used in path
+     * @returns {Promise<object>} - Order Details
+     * @see https://mexcdevelop.github.io/apidocs/spot_v3_en/#query-order
+     */
+
     static async fetchOrderFromExchange(orderId, symbol){
-        const endPoint = "/api/v3/order";
         try {
             const params = this.buildQueryParams({
                 orderId: orderId,
                 symbol: symbol
             });
 
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.Fetch_Order, params);
 
-            if (response.code !== "200") {
+            if (this.isError(response)) {
                     const failureMsg =
                       response?.sMsg ?? response.msg ?? "Unexpected response format or missing critical fields.";
                     return FetchOrderResultFactory.createFalseResult(failureMsg);
@@ -295,27 +366,31 @@ class Mexc_Service{
     }
     
     
-
-    // https://mexcdevelop.github.io/apidocs/spot_v3_en/#account-trade-list
+    /**
+     * Fetches recent Trades details from exchange
+     * @async
+     * @param {string} symbol - Trading Pair : BTS-USDT.
+     * @returns {Promise<object>} - Recent trades details.
+     * @see https://mexcdevelop.github.io/apidocs/spot_v3_en/#account-trade-list
+     */
     static async loadTradesForClosedOrder(symbol){
-        const endPoint = "/api/v3/myTrades";
-
         try {
             const params = this.buildQueryParams({
                 symbol: symbol
             });
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.Trades, params);
 
 
-            if (response.code !== "200") {
-                console.log("Response Is Not OK:", response);
+            if (!response) {
+                console.error("Error message from response", response.msg || response.error || "Unknown error");
+                const errMgs = response.msg ??  response.error ?? JSON.stringify(response);
+                return errMgs;
             }
 
-            // console.log("Response Is Not OK:", response);
+            console.log("Response:", response);
 
 
             return this.convertTradesToCcxtFormat(response ?? {});
-            // return response;
         } catch (error) {
             console.error("Error fetching Trades:", error);
             throw error;
@@ -360,20 +435,28 @@ class Mexc_Service{
     }
     
 
+/**
+ * Fetches market candles data from exchange
+ * @async
+ * @param {string} symbol - Trading Pair : BTS-USDT
+ * @param {string} interval - Time range : 1m, 2m
+ * @returns {Promise<object>} - List of candles data
+ * @see https://mexcdevelop.github.io/apidocs/spot_v3_en/#kline-candlestick-data
+ */
 
-    // https://mexcdevelop.github.io/apidocs/spot_v3_en/#kline-candlestick-data
     static async fetchKlines(symbol, interval){
-        const endPoint = "/api/v3/klines";
         try {
             const params = this.buildQueryParams({
                 symbol: symbol,
                 interval : interval
             });
-            const response = await this.callExchangeAPI(endPoint, params);
+            const response = await this.callExchangeAPI(this.endPoints.klines, params);
 
 
-            if (response.code > "00000") {
-                console.log("Response Is Not OK:", response);
+            if (!response) {
+                console.error("Error message from response", response.msg || response.error || "Unknown error");
+                const errMgs = response.msg ??  response.error ?? JSON.stringify(response);
+                return errMgs;
             }
 
             let klines = response.map(kline => [
@@ -388,8 +471,6 @@ class Mexc_Service{
               klines.sort((a, b) => a[0] - b[0]); //Sorted By timestamp
 
             return klines;
-
-            // return response;
         } catch (error) {
             console.error("Error fetching klines:", error);
             throw error;

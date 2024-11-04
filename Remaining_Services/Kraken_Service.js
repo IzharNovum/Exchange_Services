@@ -183,7 +183,6 @@ class Kraken {
       console.log("Response From API:", response);
 
       return result;
-      return response;
     } catch (error) {
       console.error("Error Fetching Balance", error);
       throw error;
