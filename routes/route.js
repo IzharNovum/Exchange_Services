@@ -3,18 +3,18 @@ import OkexService from "../Services/Okex_Service.js";
 import HuobiService from "../Services/Huobi_Service.js"
 import BinanceService from "../Services/Binance_Service.js";
 import sendLogs from "../Log_System/sendLogs.js";
-import TokoCrypto from "../Remaining_Services/TokoCrypto.js";
-import kucoin_Service from "../Remaining_Services/Kucoin_Service.js";
-import Kucoin_Future from "../Remaining_Services/Kucoin_Future.js";
-import Kraken from "../Remaining_Services/Kraken_Service.js";
-import Crypto from "../Remaining_Services/Crypto_Service.js";
-import Indodax_Services from "../Remaining_Services/Indodax_Service.js";
-import BitFinex_Service from "../Remaining_Services/BitFinex_Service.js";
-import Gate_Service from "../Remaining_Services/Gate_Service.js";
-import CoinBase_Service from "../Remaining_Services/CoinBase.js";
-import BitGet_Service from "../Remaining_Services/BitGet_Service.js";
-import BitGetFuture_Service from "../Remaining_Services/BitGetFuture_Service.js";
-import Mexc_Service from "../Remaining_Services/Mexc_Service.js";
+import TokoCrypto from "../Services/TokoCrypto.js";
+import kucoin_Service from "../Services/Kucoin_Service.js";
+import Kucoin_Future from "../Services/Kucoin_Future.js";
+import Kraken from "../Services/Kraken_Service.js";
+import Crypto from "../Services/Crypto_Service.js";
+import Indodax_Services from "../Services/Indodax_Service.js";
+import BitFinex_Service from "../Services/BitFinex_Service.js";
+import Gate_Service from "../Services/Gate_Service.js";
+import CoinBase_Service from "../Services/CoinBase.js";
+import BitGet_Service from "../Services/BitGet_Service.js";
+import BitGetFuture_Service from "../Services/BitGetFuture_Service.js";
+import Mexc_Service from "../Services/Mexc_Service.js";
 
 const router = express.Router();
 
