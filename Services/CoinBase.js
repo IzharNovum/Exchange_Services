@@ -4,6 +4,7 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
+import OrderParam from "../Models/OrderParam.js";
 const { sign } = pkg;
 
 class CoinBase_Service{
@@ -26,6 +27,18 @@ class CoinBase_Service{
     filled: CoinBase_Service.STATUS_FILLED,
   };
 
+  static OrderParam = new OrderParam();
+
+  static CB_MAP = {
+    '5m' :'FIVE_MINUTE',
+    '15m':'FIFTEEN_MINUTE',
+    '30m':'THIRTY_MINUTE',
+    '1h' :'ONE_HOUR',
+    '2h' :'TWO_HOUR',
+    '6h' :'FOUR_HOUR',
+    '1d' :'ONE_DAY',
+    '4h' :'UNKNOWN_GRANULARITY',
+  }
 
 
    static buildQueryParams(params) {
@@ -214,14 +227,12 @@ class CoinBase_Service{
  * @see https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_postorder
  */
 
-      static async placeOrderOnExchange(client_order_id, product_id, side, type, size) {
+      static async placeOrderOnExchange(OrderParam) {
         try {
           const params = this.buildQueryParams({
-            client_order_id: client_order_id,
-            product_id: product_id,
-            side: side,
-            type: type,
-            size: size
+            client_order_id: OrderParam.getcldID(),
+            product_id: OrderParam.getSymbol(),
+            side: OrderParam.getSide()
           });
 
           const response = await this.callExchangeApi(this.endPoints.Place_Order, params, "POST");
@@ -427,8 +438,12 @@ class CoinBase_Service{
 
       static async fetchKlines(product_id, granularity){
         try {
+          const start = Math.floor(Date.now() / 1000);
+        const end = Math.floor(start + this.CB_MAP[granularity] * 300 / 1000);
           const params = this.buildQueryParams({
-            granularity: granularity
+            granularity: this.CB_MAP[granularity],
+            start : start,
+            end: end
           });
 
           const response = await this.callExchangeApi(this.endPoints.klines(product_id), params);
@@ -457,8 +472,6 @@ class CoinBase_Service{
           throw error;
         }
       }
-
-
 }
 
 

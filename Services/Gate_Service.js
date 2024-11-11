@@ -3,6 +3,7 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
+import OrderParam from "../Models/OrderParam.js";
 
 
 
@@ -25,6 +26,19 @@ class Gate_Service{
       partially_filled: Gate_Service.STATUS_PARTIAL_FILLED,
       filled: Gate_Service.STATUS_FILLED,
     };
+
+    static INTERVALS = {
+        "5m": "5m",
+        "15m": "15m",
+        "30m": "30m",
+        "1h": "1h",
+        "2h": "2h",
+        "4h": "4h",
+        "6h": "6h",
+        "1d": "1d",
+      };
+
+      static OrderParam =  new OrderParam();
 
 
     static getBaseUrl(){
@@ -192,14 +206,13 @@ class Gate_Service{
      * @see https://www.gate.io/docs/developers/apiv4/en/#create-an-order
      */
 
-    static async placeOrderOnExchange(currency_pair, side, amount, price) {
+    static async placeOrderOnExchange(OrderParam) {
         try {
             const params = this.buildQueryParams({
-                currency_pair: currency_pair,
-                side: side,
-                amount: amount,
-                price: price,
-    
+                currency_pair: OrderParam.getSymbol(),
+                side: OrderParam.getSide(),
+                amount: OrderParam.getQty(),
+                price: OrderParam.getPrice(),
             })
           const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
     
@@ -401,11 +414,11 @@ class Gate_Service{
      * @see https://www.gate.io/docs/developers/apiv4/en/#market-candlesticks
      */
 
-    static async fetchKlines(currency_pair, interval){
+    static async fetchKlines(OrderParam, interval){
         try {
             const params = this.buildQueryParams({
-                currency_pair: currency_pair,
-                interval: interval
+                currency_pair: OrderParam.getSymbol(),
+                interval: this.INTERVALS[interval]
             })
             const response = await this.callExchangeAPI(this.endPoints.klines, params);
 

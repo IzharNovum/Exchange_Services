@@ -15,6 +15,7 @@ import CoinBase_Service from "../Services/CoinBase.js";
 import BitGet_Service from "../Services/BitGet_Service.js";
 import BitGetFuture_Service from "../Services/BitGetFuture_Service.js";
 import Mexc_Service from "../Services/Mexc_Service.js";
+import OrderParam from "../Models/OrderParam.js";
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ const routes = [
 
       //ROUTES FOR OKEX_SERVICE.... 
 
-    { path: "/Okex-Service/trial", handler: (req, res) => res.send("Hello from Router!") },
+    { path: "/trial", handler: (req, res) => res.send("Hello from Router!") },
     { path: "/Okex-Service/balance", handler: async (req, res) => {
         try {
             const balance = await OkexService.fetchBalanceFromExchange();
@@ -39,7 +40,8 @@ const routes = [
     }},
     { path: "/Okex-Service/place-order", handler: async (req, res) => {
         try {
-            const PlaceOrder = await OkexService.placeOrderOnExchange("BTC-USDT", "cash", "buy", "limit", 2.15, 1, "base_ccy");
+            // const PlaceOrder = await OkexService.placeOrderOnExchange("BTC-USDT", "cash", "buy", "limit", 2.15, 1, "base_ccy");
+            const PlaceOrder = await OkexService.placeOrderOnExchange(OrderParam);
             res.json(PlaceOrder);
         } catch (error) {
             //LOG ERROR...
@@ -142,7 +144,7 @@ const routes = [
   }},
   { path: "/Huobi-Service/place-order", handler: async (req, res) => {
       try {
-          const FetchOrder = await HuobiService.placeOrderOnExchange(62926999, "btcusdt", "buy-limit", 10.1, 6885.21);
+          const FetchOrder = await HuobiService.placeOrderOnExchange(OrderParam);
           res.json(FetchOrder);
       } catch (error) {
           //LOG ERROR...
@@ -164,7 +166,7 @@ const routes = [
   }},
   { path: "/Huobi-Service/cancel-order", handler: async (req, res) => {
       try {
-          const Klines = await HuobiService.cancelOrderOnExchange(233948934);
+          const Klines = await HuobiService.cancelOrderFromExchange(233948934);
           res.json(Klines);
       } catch (error) {
           //LOG ERROR...
@@ -197,7 +199,7 @@ const routes = [
 }},
 { path: "/Huobi-Service/klines", handler: async (req, res) => {
     try {
-        const order = await HuobiService.fetchKlines("btcusdt", "1min");
+        const order = await HuobiService.fetchKlines("btcusdt");
         res.json(order);
     } catch (error) {
         console.log("Caught error:", error);
@@ -223,7 +225,7 @@ const routes = [
 
         { path: "/Binance-Service/place-order", handler: async (req, res) => {
             try {
-                const order = await BinanceService.placeOrderOnExchange("BTCUSDT", "BUY", "LIMIT", 30000, 1, "GTC");
+                const order = await BinanceService.placeOrderOnExchange(OrderParam);
                 res.json(order);
             } catch (error) {
                 //LOG ERROR...
@@ -309,7 +311,8 @@ const routes = [
             
                     { path: "/Toko-Service/place-order", handler: async (req, res) => {
                         try {
-                            const order = await TokoCrypto.placeOrderOnExchange("BTC_USDT", 1, 1, 0.16, 12275.03);
+                            // const order = await TokoCrypto.placeOrderOnExchange("BTC_USDT", 1, 1, 0.16, 12275.03);
+                            const order = await TokoCrypto.placeOrderOnExchange(OrderParam);
                             res.json(order);
                         } catch (error) {
                             //LOG ERROR...
@@ -369,7 +372,7 @@ const routes = [
             
                     { path: "/Toko-Service/klines", handler: async (req, res) => {
                         try {
-                            const order = await TokoCrypto.fetchKlines("BTCUSDT", "1s");
+                            const order = await TokoCrypto.fetchKlines("BTCUSDT");
                             res.json(order);
                         } catch (error) {
                             //LOG ERROR...
@@ -396,7 +399,8 @@ const routes = [
                             
                                     { path: "/Kucoin-Service/place-order", handler: async (req, res) => {
                                         try {
-                                            const order = await kucoin_Service.placeOrderOnExchange(382932892, "sell", "BTC-USDT", 23292, 1);
+                                            // const order = await kucoin_Service.placeOrderOnExchange(382932892, "sell", "BTC-USDT", 23292, 1);
+                                            const order = await kucoin_Service.placeOrderOnExchange(OrderParam);
                                             res.json(order);
                                         } catch (error) {
                                             console.error("Error placing an order:", error.message);
@@ -458,7 +462,7 @@ const routes = [
                                     //Routes For Kucoin Future.
                                     { path: "/Kucoin-Future/place-order", handler: async (req, res) => {
                                         try {
-                                            const order = await Kucoin_Future.placeOrderOnExchange("5c52e11203aa677f33e493fb", "BUY", "BTS-USDT", 2, 104.00, 1);
+                                            const order = await Kucoin_Future.placeOrderOnExchange(OrderParam);
                                             res.json(order);
                                         } catch (error) {
                                             console.error("Error placing an order:", error.message);
@@ -508,7 +512,7 @@ const routes = [
                             
                                     { path: "/Kucoin-Future/klines", handler: async (req, res) => {
                                         try {
-                                            const order = await Kucoin_Future.fetchKlines("BTC-USDT", 1);
+                                            const order = await Kucoin_Future.fetchKlines(OrderParam);
                                             res.json(order);
                                         } catch (error) {
                                             console.error("Error fetching Kline details:", error.message);
@@ -532,7 +536,7 @@ const routes = [
 
                                         { path: "/Indo-Service/place-order", handler: async (req, res) => {
                                             try {
-                                                const order = await Indodax_Services.placeOrderOnExchange("btc_idr", "buy", 54000, 34302);
+                                                const order = await Indodax_Services.placeOrderOnExchange(OrderParam);
                                                 res.json(order);
                                             } catch (error) {
                                                 console.error("Error placing an order:", error.message);
@@ -582,7 +586,7 @@ const routes = [
                                 
                                         { path: "/Indo-Service/klines", handler: async (req, res) => {
                                             try {
-                                                const order = await Indodax_Services.fetchKlines(1698742200, 1699347009, 15, "BTCIDR");
+                                                const order = await Indodax_Services.fetchKlines(1698742200, 1699347009, "BTCIDR");
                                                 res.json(order);
                                             } catch (error) {
                                                 console.error("Error fetching Kline details:", error.message);
@@ -604,7 +608,7 @@ const routes = [
 
                                         { path: "/Kraken-Service/place-order", handler: async (req, res) => {
                                             try {
-                                                const order = await Kraken.placeOrderOnExchange("limit", "buy", 1.25, "BTCUSDT", 500000.00);
+                                                const order = await Kraken.placeOrderOnExchange(OrderParam);
                                                 res.json(order);
                                             } catch (error) {
                                                 console.error("Error placing an order:", error.message);
@@ -654,7 +658,7 @@ const routes = [
                                 
                                         { path: "/Kraken-Service/klines", handler: async (req, res) => {
                                             try {
-                                                const order = await Kraken.fetchKlines("BTCUSDT", 1);
+                                                const order = await Kraken.fetchKlines("BTCUSDT");
                                                 res.json(order);
                                             } catch (error) {
                                                 console.error("Error fetching Kline details:", error.message);
@@ -676,7 +680,8 @@ const routes = [
 
                                         { path: "/Gate-Service/place-order", handler: async (req, res) => {
                                             try {
-                                                const order = await Gate_Service.placeOrderOnExchange("BTC_USDT", "buy", 0.01, 65000);
+                                                // const order = await Gate_Service.placeOrderOnExchange("BTC_USDT", "buy", 0.01, 65000);
+                                                const order = await Gate_Service.placeOrderOnExchange(OrderParam);
                                                 res.json(order);
                                             } catch (error) {
                                                 console.error("Error placing an order:", error.message);
@@ -726,7 +731,7 @@ const routes = [
                                 
                                         { path: "/Gate-Service/klines", handler: async (req, res) => {
                                             try {
-                                                const order = await Gate_Service.fetchKlines("BTC_USDT", "10s");
+                                                const order = await Gate_Service.fetchKlines("BTC_USDT");
                                                 res.json(order);
                                             } catch (error) {
                                                 console.error("Error fetching Kline details:", error.message);
@@ -748,7 +753,8 @@ const routes = [
     
                                             { path: "/BitFinex-Service/place-order", handler: async (req, res) => {
                                                 try {
-                                                    const order = await BitFinex_Service.placeOrderOnExchange("tBTCUSD", "EXCHANGE LIMIT", 10000, 1);
+                                                    // const order = await BitFinex_Service.placeOrderOnExchange("tBTCUSD", "EXCHANGE LIMIT", 10000, 1);
+                                                    const order = await BitFinex_Service.placeOrderOnExchange(OrderParam);
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error placing an order:", error.message);
@@ -798,7 +804,7 @@ const routes = [
                                     
                                             { path: "/BitFinex-Service/klines", handler: async (req, res) => {
                                                 try {
-                                                    const order = await BitFinex_Service.fetchKlines("trade:1m:tBTCUSD", "hist");
+                                                    const order = await BitFinex_Service.fetchKlines("trade:1m:tBTCUSD");
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error fetching Kline details:", error.message);
@@ -823,7 +829,8 @@ const routes = [
     
                                             { path: "/Coinbase-Service/place-order", handler: async (req, res) => {
                                                 try {
-                                                    const order = await CoinBase_Service.placeOrderOnExchange("2389293812345", "BTC-USD", "BUY", "market", "0.5");
+                                                    // const order = await CoinBase_Service.placeOrderOnExchange("2389293812345", "BTC-USD", "BUY", "market", "0.5");
+                                                    const order = await CoinBase_Service.placeOrderOnExchange(OrderParam);
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error placing an order:", error.message);
@@ -873,7 +880,7 @@ const routes = [
                                     
                                             { path: "/Coinbase-Service/klines", handler: async (req, res) => {
                                                 try {
-                                                    const order = await CoinBase_Service.fetchKlines('BTC-USD', "ONE_MINUTE");
+                                                    const order = await CoinBase_Service.fetchKlines('BTC-USD');
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error fetching Kline details:", error.message);
@@ -896,7 +903,7 @@ const routes = [
     
                                             { path: "/crypto-Service/place-order", handler: async (req, res) => {
                                                 try {
-                                                    const order = await Crypto.placeOrderOnExchange("BTCUSD-PERP", "BUY", "LIMIT", 2, 50000);
+                                                    const order = await Crypto.placeOrderOnExchange(OrderParam);
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error placing an order:", error.message);
@@ -926,7 +933,7 @@ const routes = [
                                     
                                             { path: "/crypto-Service/fetch-order", handler: async (req, res) => {
                                                 try {
-                                                    const order = await Crypto.fetchOrderFromExchange("19848525");
+                                                    const order = await Crypto.fetchOrderFromExchange(19848525);
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error fetching order details:", error.message);
@@ -946,7 +953,7 @@ const routes = [
                                     
                                             { path: "/crypto-Service/klines", handler: async (req, res) => {
                                                 try {
-                                                    const order = await Crypto.fetchKlines("BTCUSD-PERP", "1m");
+                                                    const order = await Crypto.fetchKlines("BTCUSD-PERP");
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error fetching Kline details:", error.message);
@@ -968,7 +975,8 @@ const routes = [
     
                                             { path: "/BitGet-Service/place-order", handler: async (req, res) => {
                                                 try {
-                                                    const order = await BitGet_Service.placeOrderOnExchange("BTCUSDT_SPBL", "LIMIT", "buy", "normal", 23222.5, 1);
+                                                    // const order = await BitGet_Service.placeOrderOnExchange("BTCUSDT_SPBL", "LIMIT", "buy", "normal", 23222.5, 1);
+                                                    const order = await BitGet_Service.placeOrderOnExchange(OrderParam);
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error placing an order:", error.message);
@@ -1018,7 +1026,7 @@ const routes = [
                                     
                                             { path: "/BitGet-Service/klines", handler: async (req, res) => {
                                                 try {
-                                                    const order = await BitGet_Service.fetchKlines("BTCUSDT", "1min");
+                                                    const order = await BitGet_Service.fetchKlines("BTCUSDT");
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error fetching Kline details:", error.message);
@@ -1042,7 +1050,8 @@ const routes = [
     
                                             { path: "/Bitgetfuture-Service/place-order", handler: async (req, res) => {
                                                 try {
-                                                    const order = await BitGetFuture_Service.placeOrderOnExchange("BTCUSDT", "USDT-FUTURES", "USDT", "isolated", 1, "buy", "limit");
+                                                    // const order = await BitGetFuture_Service.placeOrderOnExchange("BTCUSDT", "USDT-FUTURES", "USDT", "isolated", 1, "buy", "limit");
+                                                    const order = await BitGetFuture_Service.placeOrderOnExchange(OrderParam, "isolated");
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error placing an order:", error.message);
@@ -1092,7 +1101,7 @@ const routes = [
                                     
                                             { path: "/Bitgetfuture-Service/klines", handler: async (req, res) => {
                                                 try {
-                                                    const order = await BitGetFuture_Service.fetchKlines("BTCUSDT", "USDT-FUTURES", "1m");
+                                                    const order = await BitGetFuture_Service.fetchKlines("BTCUSDT", "USDT-FUTURES");
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error fetching Kline details:", error.message);
@@ -1115,7 +1124,8 @@ const routes = [
     
                                             { path: "/Mexc-Service/place-order", handler: async (req, res) => {
                                                 try {
-                                                    const order = await Mexc_Service.placeOrderOnExchange("MXUSDT", "LIMIT", "buy", 23222.5, 1);
+                                                    // const order = await Mexc_Service.placeOrderOnExchange("MXUSDT", "LIMIT", "buy", 23222.5, 1);
+                                                    const order = await Mexc_Service.placeOrderOnExchange(OrderParam);
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error placing an order:", error.message);
@@ -1165,7 +1175,7 @@ const routes = [
                                     
                                             { path: "/Mexc-Service/klines", handler: async (req, res) => {
                                                 try {
-                                                    const order = await Mexc_Service.fetchKlines("BTCUSDT", "1m");
+                                                    const order = await Mexc_Service.fetchKlines("BTCUSDT");
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error fetching Kline details:", error.message);
@@ -1175,7 +1185,6 @@ const routes = [
 
 
 ];
-
 
 
 

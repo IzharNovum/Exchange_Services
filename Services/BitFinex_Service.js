@@ -3,6 +3,7 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
+import OrderParam from "../Models/OrderParam.js";
 
 class BitFinex_Service {
   static STATUS_PARTIAL_FILLED = "partial_filled";
@@ -13,6 +14,7 @@ class BitFinex_Service {
   static STATUS_OPENS_CCXT = ["open", "new", "NEW", "ongoing"];
   static STATUS_CANCELS_CCXT = ["CANCELLED", "cancelled", "CANCELED"];
   static STATUS_FILLED_CCXT = ["FILLED", "filled", "closed", "CLOSED"];
+  static section = [ "last", "hist"];
 
   static STATE_MAP = {
     canceled: BitFinex_Service.STATUS_CANCELLED,
@@ -21,6 +23,19 @@ class BitFinex_Service {
     partially_filled: BitFinex_Service.STATUS_PARTIAL_FILLED,
     filled: BitFinex_Service.STATUS_FILLED,
   };
+
+  static BAR_MAPS = {
+    "5m": "5m",
+    "15m": "15m",
+    "30m": "30m",
+    "1h": "1h",
+    "2h": "2h",
+    "4h": "4h",
+    "6h": "6h",
+    "1D": "1D",
+  };
+
+  static OrderParam = new OrderParam();
 
   static getBaseUrl() {
     return "https://api.bitfinex.com/";
@@ -37,6 +52,7 @@ class BitFinex_Service {
     Cancel_Order: "v2/auth/w/order/cancel",
     Fetch_Order: "v2/auth/w/order/update",
     Trades: "v2/auth/r/trades/hist",
+    klines: (candle, section) => `/v2/candles/${candle}/${this.section[1]}`
   };
 
   static isError(response) {
@@ -186,13 +202,13 @@ class BitFinex_Service {
    * @see https://docs.bitfinex.com/reference/rest-auth-submit-order
    */
 
-  static async placeOrderOnExchange(symbol, type, price, amount) {
+  static async placeOrderOnExchange(OrderParam) {
     try {
       const params = this.buildQueryParams({
-        symbol: symbol,
-        type: type,
-        price: price,
-        amount: amount,
+        symbol: OrderParam.getSymbol(),
+        type: OrderParam.getType(),
+        price: OrderParam.getPrice(),
+        amount: OrderParam.getQty(),
       });
 
       const response = await this.callExchangeAPI(
@@ -431,15 +447,13 @@ class BitFinex_Service {
    */
 
   static async fetchKlines(candle, section) {
-    const endPoint = `/v2/candles/${candle}/${section}`;
-
     try {
       const options = {
         method: "GET",
         headers: { accept: "application/json" },
       };
       const uri_pub = "https://api-pub.bitfinex.com";
-      const url = `${uri_pub}${endPoint}`;
+      const url = `${uri_pub}${this.endPoints.klines(candle, section)}`;
       const data = await fetch(url, options);
       const response = await data.json();
 

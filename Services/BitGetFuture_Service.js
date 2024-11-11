@@ -3,6 +3,7 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
+import OrderParam from "../Models/OrderParam.js";
 
 class BitGetFuture_Service extends BitGet_Service {
 
@@ -23,7 +24,26 @@ class BitGetFuture_Service extends BitGet_Service {
       partially_filled: BitGetFuture_Service.STATUS_PARTIAL_FILLED,
       filled: BitGetFuture_Service.STATUS_FILLED,
     };
+
+
+    static INTERVALS = {
+        "5m": "5m",
+        "15m": "15m",
+        "30m": "30m",
+        "1h": "1h",
+        "2h": "2h",
+        "4h": "4h",
+        "6h": "6h",
+        "1d": "1d",
+      };
+
+     static PRODUCT_TYPES = {
+        usd_m : 'USDT-FUTURES',
+        coin_m : 'COIN-FUTURES',
+        spot : 'USDT-FUTURES',
+     }
     
+     static OrderParam = new OrderParam();
 
     static buildQueryParams(params){
         return BitGet_Service.buildQueryParams(params);
@@ -110,7 +130,7 @@ class BitGetFuture_Service extends BitGet_Service {
      * @param {string} symbol symbol -  BTCUSDT
      * @param {string} productType productType - USDT-FUTURES
      * @param {string} marginCoin marginCoin - USDT
-     * @param {string} marginMode marginMode - isolated
+     * @param {string} marginMode marginMode - Position mode: crossed, isolated
      * @param {number} size size - 1 , 2
      * @param {string} side side - buy
      * @param {string} orderType orderType - limit.
@@ -118,18 +138,22 @@ class BitGetFuture_Service extends BitGet_Service {
      * @see https://www.bitget.com/api-doc/contract/trade/Place-Order
      */
 
-       static async placeOrderOnExchange(symbol, productType, marginCoin, marginMode, size, side, orderType){
+       static async placeOrderOnExchange(OrderParam, marginCoin){
         try {
+            const marginMode = OrderParam.getChOption('margin_mode') || 'crossed';
             const params =  this.buildQueryParams({
-                symbol: symbol,
-                productType: productType,
+                symbol: OrderParam.getSymbol(),
+                productType: this.PRODUCT_TYPES[productType],
                 marginCoin: marginCoin,
                 marginMode: marginMode,
-                size: size,
-                side: side,
-                orderType: orderType,
-
+                size: OrderParam.getQty(),
+                side: OrderParam.getSide(),
+                orderType: OrderParam.getType()
             });
+
+            if (marginMode === "crossed") {
+                params.tradeSide = OrderParam.getChOption('tradeSide') || 'Open';
+            }
 
             const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 
@@ -381,12 +405,12 @@ class BitGetFuture_Service extends BitGet_Service {
      * @see https://www.bitget.com/api-doc/contract/market/Get-Candle-Data
      */
 
-    static async fetchKlines(symbol, productType, granularity){
+    static async fetchKlines(OrderParam, productType, granularity){
         try {
             const params = this.buildQueryParams({
-                symbol: symbol,
-                productType : productType,
-                granularity: granularity
+                symbol: OrderParam.getSymbol(),
+                productType : this.PRODUCT_TYPES[productType],
+                granularity: this.BITGET_INTERVAL[granularity]
             });
             const response = await this.callExchangeAPI(this.endPoints.klines, params);
 

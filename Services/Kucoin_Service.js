@@ -3,6 +3,7 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
+import OrderParam from "../Models/OrderParam.js";
 
 
 
@@ -26,7 +27,20 @@ class kucoin_Service{
       filled: kucoin_Service.STATUS_FILLED,
     };
 
+    static INTERVALS = {
+        '1m' :'1min',
+        '5m' :'5min',
+        '15m': '15min',
+        '30m': '30min',
+        '1h' :'1hour',
+        '2h' :'2hour',
+        '4h' :'4hour',
+        '6h' :'6hour',
+        '1d' :'1day',
+      };
 
+
+      static OrderParam = new OrderParam();
 
 
 static getBaseUrl(){
@@ -202,14 +216,14 @@ static endPoints = {
  * @returns {Promise<Object>} - Details of placed order
  * @see https://www.kucoin.com/docs/rest/spot-trading/orders/place-order
  */
-    static async placeOrderOnExchange(clientOid, side, symbol, price, size){
+    static async placeOrderOnExchange(OrderParam){
         try {
             const params = this.buidlQueryParams({
-                clientOid : clientOid,
-                side: side,
-                symbol : symbol,
-                price : price,
-                size: size
+                clientOid : OrderParam.getcldID(),
+                symbol: OrderParam.getSymbol(),
+                side: OrderParam.getSide(),
+                price: OrderParam.getPrice(),
+                size:  OrderParam.getQty()
             })
             const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 
@@ -406,7 +420,7 @@ static endPoints = {
         try {
             const params = this.buidlQueryParams({
                 symbol : symbol,
-                type: type
+                type: this.INTERVALS[type]
             })
             
             const response = await this.callExchangeAPI(this.endPoints.klines, params);
@@ -433,7 +447,7 @@ static endPoints = {
         
            klines.sort((a, b) => a[0] - b[0]); //Sorted By timestamp
 
-            // console.log("Response From API", klines);
+            console.log("Response From API", klines);
 
         
            return klines;

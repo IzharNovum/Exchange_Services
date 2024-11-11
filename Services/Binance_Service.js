@@ -3,10 +3,11 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
-import { response } from "express";
 import sendLogs from "../Log_System/sendLogs.js";
+import OrderParam from "../Models/OrderParam.js";
 
 class BinanceService {
+
   static STATUS_PARTIAL_FILLED = "partial_filled";
   static STATUS_CANCELLED = "cancelled";
   static STATUS_FILLED = "filled";
@@ -24,7 +25,20 @@ class BinanceService {
     filled: BinanceService.STATUS_FILLED,
   };
 
+  static BAR_MAPS = {
+    "5m": "5m",
+    "15m": "15m",
+    "30m": "30m",
+    "1h": "1h",
+    "2h": "2h",
+    "4h": "4h",
+    "6h": "6h",
+    "1d": "1d",
+  };
+
   static userName = process.env.USER_NAME;
+
+  static OrderParam = new OrderParam();
 
   static getBaseUrl() {
     return "https://api.binance.com";
@@ -60,8 +74,11 @@ class BinanceService {
     const now = new Date();
     const timestamp = now.getTime();
     const baseUrl = this.getBaseUrl();
-    const apikey = process.env.BINANCE_API_KEY;
-    const secret = process.env.BINANCE_SECRET_KEY;
+    // const apikey = process.env.BINANCE_API_KEY;
+    // const secret = process.env.BINANCE_SECRET_KEY;
+
+    const apikey = "LDS5HyWs0fshFYrBSfQZIgb0NiZuYNj1OgeFmrRyhbByB37GUnHPBVqspoClsbWr";
+    const secret = "8Btj4RPFtm0082UNAyjBs3Wl3D7mjw4FlTeBCWj31U27d3LWlFWxs6YvqFyJx6mk";
 
     // console.log("keys", apikey)
     // console.log("keys", secret)
@@ -237,22 +254,15 @@ class BinanceService {
    * @see https://developers.binance.com/docs/binance-spot-api-docs/rest-api#new-order-trade
    */
 
-  static async placeOrderOnExchange(
-    symbol,
-    side,
-    type,
-    price,
-    quantity,
-    timeInForce
-  ) {
+  static async placeOrderOnExchange(OrderParam) {
     try {
       const params = this.buildQueryParams({
-        symbol: symbol,
-        side: side,
-        type: type,
-        price: price,
-        quantity: quantity,
-        timeInForce: timeInForce, //Good Till Cancel
+        symbol: OrderParam.getSymbol(),
+        side: OrderParam.getSide(),
+        type: OrderParam.getType(),
+        price: OrderParam.getPrice(),
+        quantity: OrderParam.getQty(),
+        timeInForce: OrderParam.getTimeinForce()
       });
 
       const response = await this.callExchangeAPI(
@@ -273,8 +283,7 @@ class BinanceService {
         return PlaceOrderResultFactory.createFalseResult(msg, response);
       }
 
-      const msg =
-        response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
+      const msg = response.data?.[0]?.sMsg ?? response.msg ?? JSON.stringify(response);
       //SUCCESS LOG...
       await sendLogs.exchangeInfo.info(
         `${msg || "Order Placed!"}`,
@@ -290,7 +299,7 @@ class BinanceService {
         this.userName
       );
       console.warn("Error Placing An Order!", error.message);
-      throw new error();
+      throw error;
     }
   }
 
@@ -559,6 +568,7 @@ class BinanceService {
     }
   }
 
+
   /**
    * Fetches market candles from exchange
    * @async
@@ -572,7 +582,7 @@ class BinanceService {
     try {
       const params = {
         symbol: symbol,
-        interval: interval,
+        interval: this.BAR_MAPS[interval],
       };
 
       const response = await this.callExchangeAPI(
@@ -616,7 +626,7 @@ class BinanceService {
         this.userName
       );
       console.warn("Error Fetching Klines!", error);
-      throw new error();
+      throw  error;
     }
   }
 }

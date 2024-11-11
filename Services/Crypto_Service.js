@@ -3,10 +3,9 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
-import { console } from "inspector";
-import { response } from "express";
+import OrderParam from "../Models/OrderParam.js";
 
-// PENDING AUTH
+
 
 class Crypto {
   static STATUS_PARTIAL_FILLED = "partial_filled";
@@ -26,6 +25,17 @@ class Crypto {
     filled: Crypto.STATUS_FILLED,
   };
 
+  static INTERVALS = {
+    "5m": "5m",
+    "15m": "15m",
+    "30m": "30m",
+    "1h": "1h",
+    "2h": "2h",
+    "4h": "4h",
+    "6h": "6h",
+    "1d": "1d",
+  };
+
   static getBaseUrl() {
     return "https://api.crypto.com/exchange/v1/";
   }
@@ -33,6 +43,8 @@ class Crypto {
   static buildQueryParams(params) {
     return params;
   }
+
+  static OrderParam = new OrderParam();
 
   static endPoints = {
     Balance : "private/user-balance",
@@ -70,6 +82,8 @@ class Crypto {
       nonce: nonce,  
       params: params,
     };
+
+     console.log("request:", request)
 
     const sortedParams = Object.keys(params).sort();
     const paramString = sortedParams
@@ -134,7 +148,8 @@ class Crypto {
 
       const response = await fetch(url, options);
       
-      return await response.json();
+      // return await response.json();
+      return await response
     } catch (error) {
       console.error("API ERROR:", error);
       throw error;
@@ -154,17 +169,12 @@ static async fetchBalanceOnExchange() {
     try {
         const response = await this.callExchangeAPI(this.endPoints.Balance, {}, "POST");
 
-        if (this.isError(response)) {
-          console.error("Error message from response", response.message || "Unknown error");
-          throw new Error(response.message || "Unknown error occuried");
-        };
-
         console.log("Response From Balance API:", response);
 
         let result = { coins: [] };
 
 
-        if (Array.isArray(response.result.data)) {
+        if (Array.isArray(response?.result?.data)) {
             console.log("Account Data Array:", response.result.data);
 
             response.result.data.forEach((accountData) => {
@@ -210,14 +220,14 @@ static async fetchBalanceOnExchange() {
  * @see https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-create-order
  */
 
-  static async placeOrderOnExchange(instrument_name, side, type, quantity, price) {
+  static async placeOrderOnExchange(OrderParam) {
     try {
       const params = this.buildQueryParams({
-        instrument_name: instrument_name,
-        side: side,
-        type: type,
-        quantity: quantity,
-        price: price,
+        instrument_name: OrderParam.getSymbol(),
+        side: OrderParam.getSide(),
+        type: OrderParam.getType(),
+        price: OrderParam.getPrice(),
+        quantity: OrderParam.getQty()
       });
 
       const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
@@ -230,7 +240,8 @@ static async fetchBalanceOnExchange() {
       }
       console.log("Response From Pending Order", response);
 
-        return await this.createSuccessPlaceOrderResult(response);  
+        // return await this.createSuccessPlaceOrderResult(response);  
+        return response
     } catch (error) {
       console.error("Error Placing An Order", error);
       throw error;
@@ -334,8 +345,7 @@ static async fetchBalanceOnExchange() {
 
       if (this.isError(response)) {
         const failureMsg = response?.message ?? "Unexpected response format or missing critical fields.";
-        return FetchOrderResultFactory.createFalseResult(failureMsg);
-        
+        return FetchOrderResultFactory.createFalseResult(failureMsg); 
       }
 
       console.log("Response ", response);
@@ -381,10 +391,10 @@ static async loadTradesForClosedOrder(instrument_name) {
         });
         const response = await this.callExchangeAPI(this.endPoints.Trades, params, "POST");
 
-        if (this.isError(response)) {
-          console.error("Error message from response", response.message || "Unknown error");
-          throw new Error(response.message || "Unknown error occuried");
-        };
+        // if (this.isError(response)) {
+        //   console.error("Error message from response", response.message || "Unknown error");
+        //   throw new Error(response.message || "Unknown error occuried");
+        // };
 
         console.log("Response ", response);
         return this.convertTradesToCcxtFormat(response);
@@ -443,7 +453,7 @@ static async convertTradesToCcxtFormat(trades = {}) {
     try {
       const params = this.buildQueryParams({
         instrument_name: instrument_name,
-        period: period,
+        period: this.INTERVALS[period],
       });
       const response = await this.callExchangeAPI(this.endPoints.klines, params, "GET");
 

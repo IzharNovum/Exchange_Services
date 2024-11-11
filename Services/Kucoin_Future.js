@@ -3,6 +3,7 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
+import OrderParam from "../Models/OrderParam.js";
 
 
 
@@ -25,7 +26,18 @@ class Kucoin_Future{
       filled: Kucoin_Future.STATUS_FILLED,
     };
 
+    static OrderParam = new OrderParam();
 
+    static INTERVALS = {
+        '1m' :'1',
+        '5m' :'5',
+        '15m': '15',
+        '30m': '30',
+        '1h' :'60',
+        '2h' :'120',
+        '4h' :'240',
+        '1d' :'1440',
+      };
 
 
 static getBaseUrl(){
@@ -145,15 +157,15 @@ static endPoints = {
  * @see https://www.kucoin.com/docs/rest/futures-trading/orders/place-order
  */
 
-    static async placeOrderOnExchange(clientOid, side, symbol, leverage, price, size){
+    static async placeOrderOnExchange(OrderParam){
         try {
             const params = this.buildQueryParams({
-                clientOid : clientOid,
-                side : side,
-                symbol: symbol,
-                leverage: leverage,
-                price: price,
-                size: size
+                clientOid : OrderParam.getcldID(),
+                side : OrderParam.getSide(),
+                symbol: OrderParam.getSymbol(),
+                leverage: OrderParam.getLeverage(),
+                price: OrderParam.getPrice(),
+                size: OrderParam.getQty()
             });
 
             const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
@@ -348,11 +360,11 @@ static endPoints = {
      * @see https://www.kucoin.com/docs/rest/futures-trading/market-data/get-klines
      */
 
-    static async fetchKlines(symbol, granularity){
+    static async fetchKlines(OrderParam, granularity){
         try {
             const params = this.buildQueryParams({
-                symbol: symbol,
-                granularity: granularity
+                symbol: OrderParam.getSymbol(),
+                granularity: this.INTERVALS[granularity]
             });
     
             const response = await this.callExchangeAPI(this.endPoints.klines, params);

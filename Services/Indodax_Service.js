@@ -3,6 +3,7 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
+import OrderParam from "../Models/OrderParam.js";
 
 class Indodax_Services{
 
@@ -23,6 +24,17 @@ class Indodax_Services{
       partially_filled: Indodax_Services.STATUS_PARTIAL_FILLED,
       filled: Indodax_Services.STATUS_FILLED,
     };
+
+    static INDO_INTERVALS = {
+        "5m": "5",
+        "15m": "15",
+        "30m": "30",
+        "1h": "60",
+        "4h": "240",
+        "1d": "1D"
+      };
+
+      static OrderParam =  new OrderParam();
 
     static getBaseUrl(){
         return "https://indodax.com/tapi";
@@ -198,15 +210,17 @@ class Indodax_Services{
      * @returns {Promise<Object>} - Details of the placed order.
      * @see  https://indodax.com/downloads/INDODAXCOM-API-DOCUMENTATION.pdf
      */
-    static async placeOrderOnExchange(pair, type, price, idr){
+    static async placeOrderOnExchange(OrderParam){
         try {
             const params = this.buildQueryParams({
                 method : this.endPoints.Place_Order,
-                pair: pair,
-                type: type,
-                price: price,
-                idr: idr
-            })
+                pair: OrderParam.getSymbol(),
+                type: OrderParam.getSide(),
+                price: OrderParam.getPrice(),
+                order_type: OrderParam.getType(),
+                time_in_force: OrderParam.timeInForce()
+            });
+
             const response = await this.callExchangeAPI("", params);
             console.log("Response From API:", response);
 
@@ -362,7 +376,7 @@ class Indodax_Services{
      * @param {string} method - Method for the API Call "Like an endPoint".
      * @param {string} pair - Trading pair : btc_idr
      * @returns {Promise<object>} - Order details
-     * @see https://www.gate.io/docs/developers/apiv4/en/#cancel-a-single-order
+     * @see https://github.com/btcid/indodax-official-api-docs/blob/master/Private-RestAPI.md#trade-history-endpoints
      */
     static async loadTradesForClosedOrder(pair){
         try {
@@ -453,11 +467,13 @@ class Indodax_Services{
 
     static async fetchKlines(from, to, tf, symbol) {    
         try {
+        // const from = new Date(from * 1000);
+        // const to = new Date(to * 1000);
         const uri = "https://indodax.com/";
         const params = new URLSearchParams({
             from: from,
             to: to,   
-            tf: tf,               
+            tf: this.INDO_INTERVALS[tf],               
             symbol: symbol 
         });
 

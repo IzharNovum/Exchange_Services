@@ -5,6 +5,7 @@ import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js"
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import dotenv from "dotenv";
 import sendLogs from "../Log_System/sendLogs.js";
+import OrderParam from "../Models/OrderParam.js";
 
 
 dotenv.config({ path: './Config/.env' });
@@ -29,6 +30,18 @@ class huobiExchange{
       partially_filled: huobiExchange.STATUS_PARTIAL_FILLED,
       filled: huobiExchange.STATUS_FILLED,
     };
+
+    static HUOBI_INTERVALS = {
+        "5m": "5min",
+        "15m": "15min",
+        "30m": "30min",
+        "1h": "60min",
+        "4h": "4hour",
+        "1d": "1d",
+        "1M": "1mon",
+      };
+
+      static OrderParam =  new OrderParam();
 
 
     static userName = process.env.USER_NAME;
@@ -69,8 +82,11 @@ class huobiExchange{
     static async authentication(endPoint = "", params = {}, method = "GET") {
         const now = new Date();
         const isoFormat = now.toISOString().replace(/\.\d{3}Z$/, "");
-        const HUOBI_API_KEY = process.env.Huobi_API_KEY;
-        const HUOBI_SECRET_KEY = process.env.Huobi_SECRET_KEY;
+        // const HUOBI_API_KEY = process.env.Huobi_API_KEY;
+        // const HUOBI_SECRET_KEY = process.env.Huobi_SECRET_KEY;
+
+        const HUOBI_API_KEY = "uymylwhfeg-89ca5dc4-df72bc1f-f1a76";
+        const HUOBI_SECRET_KEY = "582d2486-25bfe270-ad8629ed-20220";
         const SignatureMethod = "HmacSHA256";
         const SignatureVersion = "2";
         const TimeStamp = encodeURIComponent(isoFormat);
@@ -253,14 +269,14 @@ class huobiExchange{
      * @see https://huobiapi.github.io/docs/spot/v1/en/#place-a-new-order
      */
 
-    static async placeOrderOnExchange(accountId, symbol, type, amount, price){
+    static async placeOrderOnExchange(OrderParam){
         try {
             const params = this.buildQueryParams({
-                "account-id" : accountId,
-                symbol: symbol,
-                type: type,
-                amount: amount,
-                price: price 
+                "account-id" : OrderParam.getAccID(),
+                symbol: OrderParam.getSymbol(),
+                type: OrderParam.getType(),
+                price: OrderParam.getPrice(),
+                amount: OrderParam.getQty(),
             });
 
             const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
@@ -280,8 +296,8 @@ class huobiExchange{
         } catch (error) {
         //LOGS AN ERROR...
         await sendLogs.exchangeError.error(`${error.message}`, this.endPoints.Place_Order, this.userName);
-        console.warn("Error Placing An Order!", error.message);
-        throw new error;
+        console.error("Error Placing An Order!", error.message);
+        throw error;
         }
     }
 
@@ -339,7 +355,7 @@ class huobiExchange{
    * @see https://huobiapi.github.io/docs/spot/v1/en/#submit-cancel-for-an-order
    */
  
-    static async cancelOrderOnExchange(orderID) {
+    static async cancelOrderFromExchange(orderID) {
         try {
             const response = await this.callExchangeAPI(this.endPoints.Cancel_Order(orderID), {}, "POST");
     
@@ -489,7 +505,7 @@ class huobiExchange{
         try {
             const params = this.buildQueryParams({
                 symbol : symbol,
-                period : period,
+                period : this.HUOBI_INTERVALS[period],
             });
 
             const response = await this.callExchangeAPI(this.endPoints.klines, params);
@@ -522,7 +538,7 @@ class huobiExchange{
             //LOGS AN ERROR...
             await sendLogs.exchangeError.error( `${error.message}`, this.endPoints.klines, this.userName);
             console.error("Error Fetching Klines!", error);
-            throw new error;
+            throw error;
         }
     }
 

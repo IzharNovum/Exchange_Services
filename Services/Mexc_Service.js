@@ -3,6 +3,7 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
+import OrderParam from "../Models/OrderParam.js";
 
 
 class Mexc_Service{
@@ -25,7 +26,19 @@ class Mexc_Service{
       filled: Mexc_Service.STATUS_FILLED,
     };
     
+    static INTERVAL = {
+        '1m' :'1m',
+        '5m' :'5m',
+        '15m': '15m',
+        '30m': '30m',
+        '1h' :'1h',
+        '2h' :'2h',
+        '4h' :'4h',
+        '6h' :'6h',
+        '1d' :'1d',
+    }
 
+    static OrderParam = new OrderParam();
 
 
     static getBaseUrl(){
@@ -39,7 +52,7 @@ class Mexc_Service{
 
     static endPoints = {
         Balance: "/api/v3/account",
-        Place_Order : "/api/v3/orders",
+        Place_Order : "/api/v3/order",
         Pending_Order : "/api/v3/openOrders",
         Cancel_Order : "/api/v3/order",
         Fetch_Order : "/api/v3/order",
@@ -206,14 +219,14 @@ class Mexc_Service{
  * @see https://mexcdevelop.github.io/apidocs/spot_v3_en/#new-order
  */
 
-       static async placeOrderOnExchange(symbol, type, side, price, quantity){
+       static async placeOrderOnExchange(OrderParam){
         try {
             const params =  this.buildQueryParams({
-                symbol: symbol,
-                type: type,
-                side: side,
-                price: price,
-                quantity: quantity
+                symbol: OrderParam.getSymbol(),
+                side: OrderParam.getSide(),
+                type: OrderParam.getType(),
+                price: OrderParam.getPrice(),
+                quantity: OrderParam.getQty()
             });
 
             const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
@@ -448,7 +461,7 @@ class Mexc_Service{
         try {
             const params = this.buildQueryParams({
                 symbol: symbol,
-                interval : interval
+                interval : this.INTERVAL[interval]
             });
             const response = await this.callExchangeAPI(this.endPoints.klines, params);
 

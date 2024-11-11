@@ -3,8 +3,40 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
+import OrderParam from "../Models/OrderParam.js";
 
 class Kraken {
+
+  static STATUS_PARTIAL_FILLED = "partial_filled";
+  static STATUS_CANCELLED = "cancelled";
+  static STATUS_FILLED = "filled";
+  static STATUS_ONGOING = "ongoing";
+
+  static STATUS_OPENS_CCXT = ["open", "new", "NEW", "ongoing"];
+  static STATUS_CANCELS_CCXT = ["CANCELLED", "cancelled", "CANCELED"];
+  static STATUS_FILLED_CCXT = ["FILLED", "filled", "closed", "CLOSED"];
+  static section = [ "last", "hist"];
+
+  static STATE_MAP = {
+    canceled: Kraken.STATUS_CANCELLED,
+    mmp_canceled: Kraken.STATUS_CANCELLED,
+    live: Kraken.STATUS_ONGOING,
+    partially_filled: Kraken.STATUS_PARTIAL_FILLED,
+    filled: Kraken.STATUS_FILLED,
+  };
+
+  static KRAK_INTERVALS = {
+    "5m": "5",
+    "15m": "15",
+    "30m": "30",
+    "1h": "60",
+    "4h": "240",
+    "1d": "1440"
+  };
+
+  static OrderParam = new OrderParam();
+
+
   static getBaseUrl() {
     return "https://api.kraken.com";
   }
@@ -12,6 +44,9 @@ class Kraken {
   static buildQueryParams(params) {
     return params;
   }
+
+
+
 
   static endPoints = {
     Balance : "BalanceEx",
@@ -200,14 +235,14 @@ class Kraken {
        * @returns {Promise<Object>} - Details of the placed order.
        * @see https://docs.kraken.com/api/docs/rest-api/add-order
        */
-  static async placeOrderOnExchange(ordertype, type, volume, pair, price) {
+  static async placeOrderOnExchange(OrderParam) {
     try {
       const params = this.buildQueryParams({
-        ordertype: ordertype,
-        type: type,
-        volume: volume,
-        pair: pair,
-        price: price,
+        ordertype: OrderParam.getType(),
+        type: OrderParam.getSide(),
+        volume: OrderParam.getQty(),
+        pair: OrderParam.getSymbol(),
+        price: OrderParam.getPrice(),
       });
 
       const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
@@ -434,13 +469,13 @@ class Kraken {
      * @returns {Promise<object>} - List of market candles.
      * @see https://docs.kraken.com/api/docs/rest-api/get-ohlc-data
      */
-  static async fetchKlines(interval) {
+  static async fetchKlines(pair,interval) {
     const url = "https://api.kraken.com/0/public/OHLC";
 
     try {
       const params = new URLSearchParams({
         pair: pair,
-        interval: interval,
+        interval: this.KRAK_INTERVALS[interval],
       });
 
       const fullUrl = `${url}?${params.toString()}`;

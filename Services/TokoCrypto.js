@@ -3,6 +3,7 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
+import OrderParam from "../Models/OrderParam.js";
 
 
 
@@ -25,6 +26,21 @@ class TokoCrypto {
       partially_filled: TokoCrypto.STATUS_PARTIAL_FILLED,
       filled: TokoCrypto.STATUS_FILLED,
     };
+
+    static INTERVAL = {
+      '1m' :'1m',
+      '5m' :'5m',
+      '15m': '15m',
+      '30m': '30m',
+      '1h' :'1h',
+      '2h' :'2h',
+      '4h' :'4h',
+      '6h' :'6h',
+      '1d' :'1d',
+  };
+
+
+  static OrderParam = new OrderParam();
 
 
     static userName = process.env.USER_NAME;
@@ -215,14 +231,14 @@ class TokoCrypto {
          * @see https://www.tokocrypto.com/apidocs/#new-order--signed
          */
 
-        static async placeOrderOnExchange(symbol, side, type, quantity, price){
+        static async placeOrderOnExchange(OrderParam){
             try {
                 const params = this.buildQueryParams({
-                    symbol : symbol,
-                    side : side,
-                    type : type,
-                    quantity : quantity,
-                    price : price
+                    symbol : OrderParam.getSymbol(),
+                    side : OrderParam.getSide(),
+                    type : OrderParam.getType(),
+                    quantity : OrderParam.getQty(),
+                    price : OrderParam.getPrice()
                 })
 
                 const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
@@ -429,7 +445,7 @@ class TokoCrypto {
             try {
                 const params = new URLSearchParams({
                     symbol: symbol,
-                    interval: interval,
+                    interval: this.INTERVAL[interval],
                 }).toString();
         
                 const url = `${endPoint}?${params}`;
@@ -439,7 +455,7 @@ class TokoCrypto {
                 if (!response.ok) {
                     const error = await response.json();
                     console.warn("Response is not OK!", error);
-                    return;
+                    return response;
                 }
         
                 const data = await response.json();

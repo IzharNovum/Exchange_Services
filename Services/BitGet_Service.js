@@ -3,7 +3,7 @@ import PlaceOrderResultFactory from "../Order_Result/PlaceOrderResultFactory.js"
 import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
-import { Balance } from "@coinbase/coinbase-sdk";
+import OrderParam from "../Models/OrderParam.js";
 
 
 class BitGet_Service{
@@ -26,8 +26,21 @@ class BitGet_Service{
       filled: BitGet_Service.STATUS_FILLED,
     };
     
+    static BITGET_INTERVAL = {
+        '1m' :'1min',
+        '5m' :'5min',
+        '15m': '15min',
+        '30m': '30min',
+        '1h' :'60min',
+        '2h' :'120min',
+        '4h' :'240min',
+        '6h' :'360min',
+        '12h': '720min',
+        '1d' :'1day',
+        '1w' :'1week',
+    };
 
-
+    static OrderParam = new OrderParam();
 
     static getBaseUrl(){
         return "https://api.bitget.com";
@@ -40,6 +53,7 @@ class BitGet_Service{
 
     static endPoints = {
         Balance : "/api/v2/spot/account/assets",
+        // Balance : "/api/v2/spot/public/coins",//not yet confirmed about this
         Place_Order : "/api/v2/spot/trade/place-order",
         Pending_Order : "/api/v2/spot/trade/unfilled-orders",
         Cancel_Order : "/api/v2/spot/trade/cancel-order",
@@ -194,22 +208,22 @@ class BitGet_Service{
  * @param {string} symbol  symbol - BTCUSDT_SPBL
  * @param {string} orderType  orderType - limit
  * @param {string} side  side - buy/sell
- * @param {string} force  force - normal
+ * @param {string} force  force - Time In Force: GTC, IOC, FOK
  * @param {number} price  price - price of order
  * @param {number} quantity quantity - number of order
  * @returns {Promise<Object>} - Order details in PlaceOrderResultFactory format
- * @see https://bitgetlimited.github.io/apidoc/en/spot/#place-order
+ * @see https://www.bitget.com/api-doc/spot/trade/Place-Order
  */
 
-       static async placeOrderOnExchange(symbol, orderType, side, force, price, quantity){
+       static async placeOrderOnExchange(OrderParam){
         try {
             const params =  this.buildQueryParams({
-                symbol: symbol,
-                orderType: orderType,
-                side: side,
-                force: force,
-                price: price,
-                quantity: quantity
+                symbol: OrderParam.getSymbol(),
+                orderType: OrderParam.getType(),
+                side: OrderParam.getSide(),
+                force: OrderParam.getTimeinForce(),
+                price: OrderParam.getPrice(),
+                quantity: OrderParam.getQty(),
             });
 
             const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
@@ -442,7 +456,7 @@ static createFetchOrderResultFromResponse(response) {
         try {
             const params = this.buildQueryParams({
                 symbol: symbol,
-                granularity : granularity
+                granularity : this.BITGET_INTERVAL[granularity]
             });
             const response = await this.callExchangeAPI(this.endPoints.klines, params);
 
