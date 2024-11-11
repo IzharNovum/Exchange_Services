@@ -52,7 +52,7 @@ class BitFinex_Service {
     Cancel_Order: "v2/auth/w/order/cancel",
     Fetch_Order: "v2/auth/w/order/update",
     Trades: "v2/auth/r/trades/hist",
-    klines: (candle, section) => `/v2/candles/${candle}/${this.section[1]}`
+    klines: (candle, section) => `/v2/candles/${candle}/${section}`
   };
 
   static isError(response) {

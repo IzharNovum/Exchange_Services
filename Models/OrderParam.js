@@ -6,7 +6,6 @@ class OrderParam {
     static TYPE_LIMIT = "limit";
     static TYPES = [OrderParam.TYPE_LIMIT, OrderParam.TYPE_MARKET];
     static SIDE_EFFECT_NONE = "NO_SIDE_EFFECT";
-    static timeInForce = ["GTC", "IOC", "FOK", "post_only"];
 
 
 
@@ -15,10 +14,6 @@ class OrderParam {
         side,
         quantity,
         price,
-        cliendID,
-        AccountID,
-        leverage,
-        tgtCcy,
         orderType = OrderParam.TYPE_LIMIT,
         sideEffect = OrderParam.SIDE_EFFECT_NONE,
         options = {}
@@ -27,10 +22,6 @@ class OrderParam {
         this.side = side;
         this.qty = quantity;
         this.price = price;
-        this.cliendID = cliendID;
-        this.AccountID = AccountID;
-        this.leverage = leverage;
-        this.tgtCcy = tgtCcy;
         this.orderType = orderType;
         this.sideEffect = sideEffect;
         this.options = options;
@@ -54,31 +45,8 @@ class OrderParam {
         return this.side;
     }
 
-    static getLeverage(){
-        return this.leverage;
-    }
-
-    static getTdMode(){
-        return this.tdMode;
-    }
-
-    static gettgtCcy(){
-        return this.tgtCcy;
-    }
     static getQty() {
         return this.qty;
-    }
-
-    static getTimeinForce(){
-        return this.timeInForce;
-    }
-
-    static getcldID(){
-        return this.cliendID;
-    }
-
-    static getAccID(){
-        return this.AccountID;
     }
 
      static getPrice() {

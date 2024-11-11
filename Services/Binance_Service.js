@@ -5,6 +5,7 @@ import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js"
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import sendLogs from "../Log_System/sendLogs.js";
 import OrderParam from "../Models/OrderParam.js";
+import ExchangePair from "../Models/ExchangePair.js";
 
 class BinanceService {
 
@@ -38,7 +39,11 @@ class BinanceService {
 
   static userName = process.env.USER_NAME;
 
+  /**
+   * Instance of the classes.
+   */
   static OrderParam = new OrderParam();
+  static ExchangePair = new ExchangePair();
 
   static getBaseUrl() {
     return "https://api.binance.com";
@@ -74,11 +79,8 @@ class BinanceService {
     const now = new Date();
     const timestamp = now.getTime();
     const baseUrl = this.getBaseUrl();
-    // const apikey = process.env.BINANCE_API_KEY;
-    // const secret = process.env.BINANCE_SECRET_KEY;
-
-    const apikey = "LDS5HyWs0fshFYrBSfQZIgb0NiZuYNj1OgeFmrRyhbByB37GUnHPBVqspoClsbWr";
-    const secret = "8Btj4RPFtm0082UNAyjBs3Wl3D7mjw4FlTeBCWj31U27d3LWlFWxs6YvqFyJx6mk";
+    const apikey = process.env.BINANCE_API_KEY;
+    const secret = process.env.BINANCE_SECRET_KEY;
 
     // console.log("keys", apikey)
     // console.log("keys", secret)
@@ -254,7 +256,7 @@ class BinanceService {
    * @see https://developers.binance.com/docs/binance-spot-api-docs/rest-api#new-order-trade
    */
 
-  static async placeOrderOnExchange(OrderParam) {
+  static async placeOrderOnExchange(ExchangePair, OrderParam) {
     try {
       const params = this.buildQueryParams({
         symbol: OrderParam.getSymbol(),
@@ -262,7 +264,7 @@ class BinanceService {
         type: OrderParam.getType(),
         price: OrderParam.getPrice(),
         quantity: OrderParam.getQty(),
-        timeInForce: OrderParam.getTimeinForce()
+        timeInForce: ExchangePair.getTimeinForce()
       });
 
       const response = await this.callExchangeAPI(

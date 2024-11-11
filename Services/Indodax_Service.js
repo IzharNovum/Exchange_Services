@@ -4,6 +4,7 @@ import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import OrderParam from "../Models/OrderParam.js";
+import ExchangePair from "../Models/ExchangePair.js";
 
 class Indodax_Services{
 
@@ -34,7 +35,11 @@ class Indodax_Services{
         "1d": "1D"
       };
 
+      /**
+       * Instance of the classes
+       */
       static OrderParam =  new OrderParam();
+      static ExchangePair = new ExchangePair();
 
     static getBaseUrl(){
         return "https://indodax.com/tapi";
@@ -210,7 +215,7 @@ class Indodax_Services{
      * @returns {Promise<Object>} - Details of the placed order.
      * @see  https://indodax.com/downloads/INDODAXCOM-API-DOCUMENTATION.pdf
      */
-    static async placeOrderOnExchange(OrderParam){
+    static async placeOrderOnExchange(ExchangePair, OrderParam){
         try {
             const params = this.buildQueryParams({
                 method : this.endPoints.Place_Order,
@@ -218,7 +223,7 @@ class Indodax_Services{
                 type: OrderParam.getSide(),
                 price: OrderParam.getPrice(),
                 order_type: OrderParam.getType(),
-                time_in_force: OrderParam.timeInForce()
+                time_in_force: ExchangePair.timeInForce()
             });
 
             const response = await this.callExchangeAPI("", params);

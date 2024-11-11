@@ -4,6 +4,7 @@ import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import OrderParam from "../Models/OrderParam.js";
+import ExchangePair from "../Models/ExchangePair.js";
 
 
 
@@ -26,7 +27,11 @@ class Kucoin_Future{
       filled: Kucoin_Future.STATUS_FILLED,
     };
 
+    /**
+     * Instance of the clasees.
+     */
     static OrderParam = new OrderParam();
+    static ExchangePair =  new ExchangePair();
 
     static INTERVALS = {
         '1m' :'1',
@@ -157,13 +162,13 @@ static endPoints = {
  * @see https://www.kucoin.com/docs/rest/futures-trading/orders/place-order
  */
 
-    static async placeOrderOnExchange(OrderParam){
+    static async placeOrderOnExchange(ExchangePair, OrderParam){
         try {
             const params = this.buildQueryParams({
-                clientOid : OrderParam.getcldID(),
+                clientOid : ExchangePair.getcliendOrderID(),
                 side : OrderParam.getSide(),
                 symbol: OrderParam.getSymbol(),
-                leverage: OrderParam.getLeverage(),
+                leverage: ExchangePair.getLeverage(),
                 price: OrderParam.getPrice(),
                 size: OrderParam.getQty()
             });

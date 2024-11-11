@@ -44,6 +44,9 @@ class Crypto {
     return params;
   }
 
+  /**
+   * Instance of the classes.
+   */
   static OrderParam = new OrderParam();
 
   static endPoints = {
@@ -240,8 +243,8 @@ static async fetchBalanceOnExchange() {
       }
       console.log("Response From Pending Order", response);
 
-        // return await this.createSuccessPlaceOrderResult(response);  
-        return response
+        return await this.createSuccessPlaceOrderResult(response);  
+        // return response
     } catch (error) {
       console.error("Error Placing An Order", error);
       throw error;

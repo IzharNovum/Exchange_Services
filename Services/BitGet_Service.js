@@ -4,6 +4,7 @@ import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import OrderParam from "../Models/OrderParam.js";
+import ExchangePair from "../Models/ExchangePair.js";
 
 
 class BitGet_Service{
@@ -40,7 +41,11 @@ class BitGet_Service{
         '1w' :'1week',
     };
 
+    /**
+     * Instance of the classes
+     */
     static OrderParam = new OrderParam();
+    static ExchangePair =  new ExchangePair();
 
     static getBaseUrl(){
         return "https://api.bitget.com";
@@ -215,13 +220,13 @@ class BitGet_Service{
  * @see https://www.bitget.com/api-doc/spot/trade/Place-Order
  */
 
-       static async placeOrderOnExchange(OrderParam){
+       static async placeOrderOnExchange(ExchangePair, OrderParam){
         try {
             const params =  this.buildQueryParams({
                 symbol: OrderParam.getSymbol(),
                 orderType: OrderParam.getType(),
                 side: OrderParam.getSide(),
-                force: OrderParam.getTimeinForce(),
+                force: ExchangePair.getTimeinForce(),
                 price: OrderParam.getPrice(),
                 quantity: OrderParam.getQty(),
             });

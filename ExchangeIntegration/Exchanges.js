@@ -36,6 +36,7 @@ class ExchangeIntegration{
         console.log("Place AN Order:", service);
         return service
     }
+
     async pendingOrders(){
         const service = await this.exchangeService.pendingOrders();
         console.log("fetch Pending Order:", service);
@@ -172,19 +173,19 @@ const bots = [
 
 
 
-for (let i = 0; i < bots.length; i++) {
-    const bot = bots[i];
-    const exchangeIndex = bot.Exchange;
-    console.log("just checking", exchangeIndex);
+// for (let i = 0; i < bots.length; i++) {
+//     const bot = bots[i];
+//     const exchangeIndex = bot.Exchange;
+//     console.log("just checking", exchangeIndex);
 
-    const selectedExchangeService = exchangeService[exchangeIndex]; 
+//     const selectedExchangeService = exchangeService[exchangeIndex]; 
     
-    if (selectedExchangeService) {
-        const exchangeIntegration = new ExchangeIntegration(selectedExchangeService, OrderParam);  
-            await exchangeIntegration.placeOrderOnExchange(OrderParam);
-    } else {
-        console.log(`No exchange service found for Bot ${i + 1}`);
-    }
-}
+//     if (selectedExchangeService) {
+//         const exchangeIntegration = new ExchangeIntegration(selectedExchangeService, OrderParam);  
+//             await exchangeIntegration.placeOrderOnExchange(OrderParam);
+//     } else {
+//         console.log(`No exchange service found for Bot ${i + 1}`);
+//     }
+// }
 
 

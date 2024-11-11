@@ -43,6 +43,9 @@ class BitGetFuture_Service extends BitGet_Service {
         spot : 'USDT-FUTURES',
      }
     
+     /**
+      * Instance of the classes
+      */
      static OrderParam = new OrderParam();
 
     static buildQueryParams(params){

@@ -38,6 +38,9 @@ class Mexc_Service{
         '1d' :'1d',
     }
 
+    /**
+     * Instance of the classes.
+     */
     static OrderParam = new OrderParam();
 
 

@@ -5,6 +5,7 @@ import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import OrderParam from "../Models/OrderParam.js";
+import ExchangePair from "../Models/ExchangePair.js";
 const { sign } = pkg;
 
 class CoinBase_Service{
@@ -27,7 +28,11 @@ class CoinBase_Service{
     filled: CoinBase_Service.STATUS_FILLED,
   };
 
+  /**
+   * Instance of the classes.
+   */
   static OrderParam = new OrderParam();
+  static ExchangePair =  new ExchangePair();
 
   static CB_MAP = {
     '5m' :'FIVE_MINUTE',
@@ -171,8 +176,9 @@ class CoinBase_Service{
  * @see https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getaccount
  */
 
-  static async fetchBalanceOnExchange(account_uuid) {
+  static async fetchBalanceOnExchange(ExchangePair) {
     try {
+      const account_uuid = ExchangePair.getAccntIDUUID();
       const response = await this.callExchangeApi(this.endPoints.Balance(account_uuid), {});
 
       if(this.isError(response)){
@@ -227,10 +233,10 @@ class CoinBase_Service{
  * @see https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_postorder
  */
 
-      static async placeOrderOnExchange(OrderParam) {
+      static async placeOrderOnExchange(ExchangePair, OrderParam) {
         try {
           const params = this.buildQueryParams({
-            client_order_id: OrderParam.getcldID(),
+            client_order_id: ExchangePair.getcliendOrderID(),
             product_id: OrderParam.getSymbol(),
             side: OrderParam.getSide()
           });

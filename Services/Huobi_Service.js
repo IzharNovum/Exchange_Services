@@ -6,10 +6,10 @@ import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import dotenv from "dotenv";
 import sendLogs from "../Log_System/sendLogs.js";
 import OrderParam from "../Models/OrderParam.js";
+import ExchangePair from "../Models/ExchangePair.js";
 
 
 dotenv.config({ path: './Config/.env' });
-
 
 class huobiExchange{
 
@@ -41,7 +41,11 @@ class huobiExchange{
         "1M": "1mon",
       };
 
+      /**
+       * Instance of the classes.
+       */
       static OrderParam =  new OrderParam();
+      static ExchangePair =  new ExchangePair();
 
 
     static userName = process.env.USER_NAME;
@@ -82,11 +86,8 @@ class huobiExchange{
     static async authentication(endPoint = "", params = {}, method = "GET") {
         const now = new Date();
         const isoFormat = now.toISOString().replace(/\.\d{3}Z$/, "");
-        // const HUOBI_API_KEY = process.env.Huobi_API_KEY;
-        // const HUOBI_SECRET_KEY = process.env.Huobi_SECRET_KEY;
-
-        const HUOBI_API_KEY = "uymylwhfeg-89ca5dc4-df72bc1f-f1a76";
-        const HUOBI_SECRET_KEY = "582d2486-25bfe270-ad8629ed-20220";
+        const HUOBI_API_KEY = process.env.Huobi_API_KEY;
+        const HUOBI_SECRET_KEY = process.env.Huobi_SECRET_KEY;
         const SignatureMethod = "HmacSHA256";
         const SignatureVersion = "2";
         const TimeStamp = encodeURIComponent(isoFormat);
@@ -195,8 +196,9 @@ class huobiExchange{
      * @see https://huobiapi.github.io/docs/spot/v1/en/#get-account-balance-of-a-specific-account
      */
 
-    static async fetchBalanceOnExchange(accountId){
+    static async fetchBalanceOnExchange(ExchangePair){
         try {
+            const accountId = ExchangePair.getAccID();
             const response = await this.callExchangeAPI(this.endPoints.Balance(accountId), {});
 
             if(this.isError(response)){
@@ -269,10 +271,10 @@ class huobiExchange{
      * @see https://huobiapi.github.io/docs/spot/v1/en/#place-a-new-order
      */
 
-    static async placeOrderOnExchange(OrderParam){
+    static async placeOrderOnExchange(ExchangePair, OrderParam){
         try {
             const params = this.buildQueryParams({
-                "account-id" : OrderParam.getAccID(),
+                "account-id" : ExchangePair.getAccID(),
                 symbol: OrderParam.getSymbol(),
                 type: OrderParam.getType(),
                 price: OrderParam.getPrice(),

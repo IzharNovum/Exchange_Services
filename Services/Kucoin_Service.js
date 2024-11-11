@@ -4,6 +4,7 @@ import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import OrderParam from "../Models/OrderParam.js";
+import ExchangePair from "../Models/ExchangePair.js";
 
 
 
@@ -40,7 +41,11 @@ class kucoin_Service{
       };
 
 
+      /**
+       * Instance of the classes
+       */
       static OrderParam = new OrderParam();
+      static ExchangePair = new ExchangePair();
 
 
 static getBaseUrl(){
@@ -54,7 +59,8 @@ static buidlQueryParams(params){
 }
 
 static endPoints = {
-    Balance: "/api/v1/accounts",
+    // Balance: "/api/v1/accounts",
+    Balance:(accountId) => `/api/v1/accounts/${accountId}`,
     Place_Order : "/api/v1/orders",
     Pending_Order : "/api/v1/limit/orders",
     Cancel_Order :(orderId) => `/api/v1/orders/${orderId}`,
@@ -152,12 +158,13 @@ static endPoints = {
  * Fecthes User balance from the exchange.
  * @async
  * @returns {Promise<{coins: Array}>} - User Balance-data
- * @see  https://www.kucoin.com/docs/rest/account/basic-info/get-account-list-spot-margin-trade_hf
+ * @see https://www.kucoin.com/docs/rest/account/basic-info/get-account-detail-spot-margin-trade_hf
  */
 
-    static async fetchBalanceOnExchange(){
+    static async fetchBalanceOnExchange(ExchangePair){
         try {
-            const response = await this.callExchangeAPI(this.endPoints.Balance, {});
+            const accountId =  ExchangePair.getAccID();
+            const response = await this.callExchangeAPI(this.endPoints.Balance(accountId), {});
 
             if(!response){
                 console.error("Error message from response", response.msg || "Unknown error");
@@ -173,9 +180,7 @@ static endPoints = {
                   const frozenBal = parseFloat(coinInfo.holds);
     
                     result.coins.push({
-                        id: coinInfo.id,
                       coin: coinInfo.currency,
-                      type: coinInfo.type,
                       free: availBal,
                       used: frozenBal,
                       total: availBal + frozenBal,
@@ -186,9 +191,7 @@ static endPoints = {
                 // If no coins were added, shows a default values
                 if (result.coins.length === 0) {
                     result.coins.push({
-                        id: "",
                         coin: 0,
-                        type: "NONE",
                         free: 0,
                         used: 0,
                         total: 0,
@@ -216,10 +219,10 @@ static endPoints = {
  * @returns {Promise<Object>} - Details of placed order
  * @see https://www.kucoin.com/docs/rest/spot-trading/orders/place-order
  */
-    static async placeOrderOnExchange(OrderParam){
+    static async placeOrderOnExchange(ExchangePair, OrderParam){
         try {
             const params = this.buidlQueryParams({
-                clientOid : OrderParam.getcldID(),
+                clientOid : ExchangePair.getcliendOrderID(),
                 symbol: OrderParam.getSymbol(),
                 side: OrderParam.getSide(),
                 price: OrderParam.getPrice(),

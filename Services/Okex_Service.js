@@ -7,6 +7,7 @@ import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js"
 import NonCcxtExchangeService from "../Order_Result/NonCcxtExchangeService.js";
 import sendLogs from '../Log_System/sendLogs.js';
 import OrderParam from '../Models/OrderParam.js';
+import ExchangePair from '../Models/ExchangePair.js';
 
 
 
@@ -29,7 +30,11 @@ class OkexService extends NonCcxtExchangeService{
       filled: OkexService.STATUS_FILLED,
     };
 
+    /**
+     * Instance of the classes.
+     */
     static OrderParam = new OrderParam();
+    static ExchangePair =  new ExchangePair();
 
     static BAR_MAPS = {
       "5m": "5m",
@@ -232,16 +237,16 @@ static async fetchBalanceFromExchange() {
  * @returns {Promise<object>} - Details of placed Order.
  * @see https://www.okx.com/docs-v5/en/#order-book-trading-trade-post-place-order
  */
- static async  placeOrderOnExchange(OrderParam) {
+ static async  placeOrderOnExchange(ExchangePair, OrderParam) {
   try {
     const params = this.buildQueryParams({
       instId: OrderParam.getSymbol(),
-      tdMode: OrderParam.getTdMode(),
+      tdMode: ExchangePair.getTdMode(),
       side: OrderParam.getSide(),
       ordType: OrderParam.getType(),
       px: OrderParam.getPrice(),
       sz: OrderParam.getQty(),
-      tgtCcy: OrderParam.gettgtCcy(),
+      tgtCcy: ExchangePair.gettgtCcy(),
     });
 
     const response = await this.callExchangeApi(this.endPoints.Place_Order, params, "POST");
