@@ -19,7 +19,9 @@ import OrderParam from "../Models/OrderParam.js";
 
 
 
-
+/**
+ * Common Exchange to call the exchanges
+ */
 class ExchangeIntegration{
     constructor(exchangeService, orderParams){
         this.exchangeService = exchangeService
@@ -70,7 +72,10 @@ export default ExchangeIntegration;
 
 
 
-
+/**
+ * @object - Object of the exchage services.
+ * @returns {exchangeService} - ExchangeService : OKex, huobi, binance.
+ */
 const exchangeService = {
     0: Huobi_Service,
     1: Binance_Service,
@@ -88,6 +93,17 @@ const exchangeService = {
     13: TokoCrypto,
     14: OkexService
 };
+
+
+/**
+ * Bots for trading execution.
+ * @type {Array<Object>} - Array of bot configurations
+ * @property {Object} Asset - Trading details such as pair and strategy
+ * @property {Object} Trade_Parameter - Parameters including allocation and order settings
+ * @property {Object} Entry_Conditions - Entry indicator triggers
+ * @property {Object} Exit_Conditions - Profit and loss settings for exits
+ * @property {number} Exchange - Index of exchange in exchangeService object
+ */
 
 const bots = [
     {
@@ -171,21 +187,24 @@ const bots = [
 ];
 
 
+/**
+ * Processes each bot with the associated exchange service.
+ * @returns {Promise<result>} - Exchange Result
+ */
 
+for (let i = 0; i < bots.length; i++) {
+    const bot = bots[i];
+    const exchangeIndex = bot.Exchange;
+    console.log("just checking", exchangeIndex);
 
-// for (let i = 0; i < bots.length; i++) {
-//     const bot = bots[i];
-//     const exchangeIndex = bot.Exchange;
-//     console.log("just checking", exchangeIndex);
-
-//     const selectedExchangeService = exchangeService[exchangeIndex]; 
+    const selectedExchangeService = exchangeService[exchangeIndex]; 
     
-//     if (selectedExchangeService) {
-//         const exchangeIntegration = new ExchangeIntegration(selectedExchangeService, OrderParam);  
-//             await exchangeIntegration.placeOrderOnExchange(OrderParam);
-//     } else {
-//         console.log(`No exchange service found for Bot ${i + 1}`);
-//     }
-// }
+    if (selectedExchangeService) {
+        const exchangeIntegration = new ExchangeIntegration(selectedExchangeService, OrderParam);  
+            await exchangeIntegration.placeOrderOnExchange(OrderParam);
+    } else {
+        console.log(`No exchange service found for Bot ${i + 1}`);
+    }
+}
 
 

@@ -151,8 +151,8 @@ class Crypto {
 
       const response = await fetch(url, options);
       
-      // return await response.json();
-      return await response
+      return await response.json();
+      // return await response
     } catch (error) {
       console.error("API ERROR:", error);
       throw error;

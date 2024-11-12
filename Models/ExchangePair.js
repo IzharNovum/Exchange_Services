@@ -4,7 +4,6 @@ class ExchangePair{
     static timeInForce = ["GTC", "IOC", "FOK", "post_only"];
 
     constructor(
-        cliendID,
         cliendOrderID,
         accountID,
         accntIDUUID,
@@ -12,7 +11,6 @@ class ExchangePair{
         tgtCcy,
         tdMode
     ){
-        this.cliendID = cliendID;
         this.cliendOrderID = cliendOrderID;
         this.accountID = accountID;
         this.accntIDUUID = accntIDUUID;
@@ -25,21 +23,15 @@ class ExchangePair{
         return this.timeInForce;
     }
 
-    static getcldID(){
-        return this.cliendID;
-    }
-
     static getcliendOrderID(){
         return this.cliendOrderID;
     }
     static getAccID(){
         return this.accountID;
-        // return "5bd6e9286d99522a52e458de"
     }
 
     static getAccntIDUUID(){
         return this.accntIDUUID;
-        // return "5bd6e9286d99522a52e458de"
     }
 
     static getLeverage(){
