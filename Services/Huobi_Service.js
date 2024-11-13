@@ -141,6 +141,8 @@ class huobiExchange{
                     }
             }
 
+            console.log("COMMO TESTINNG:", options)
+
             const fetchData = await fetch(url, options);
             const response = await fetchData.json();
 
@@ -271,14 +273,16 @@ class huobiExchange{
      * @see https://huobiapi.github.io/docs/spot/v1/en/#place-a-new-order
      */
 
-    static async placeOrderOnExchange(ExchangePair, OrderParam){
+    static async placeOrderOnExchange({symbol, side, price, quantity}){
+    // static async placeOrderOnExchange(ExchangePair, OrderParam){
+
         try {
             const params = this.buildQueryParams({
                 "account-id" : ExchangePair.getAccID(),
-                symbol: OrderParam.getSymbol(),
-                type: OrderParam.getType(),
-                price: OrderParam.getPrice(),
-                amount: OrderParam.getQty(),
+                symbol: symbol,
+                type: side,
+                price: price,
+                amount: quantity
             });
 
             const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");

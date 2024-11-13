@@ -27,4 +27,4 @@ numbers
     })
     .catch((error) => {
         console.error(error); // This will log the error message if no data is found
-    });
+    });s

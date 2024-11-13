@@ -24,10 +24,10 @@ import ExchangePair from "../Models/ExchangePair.js";
  * Common Exchange to call the exchanges
  */
 class ExchangeIntegration{
-    constructor(exchangeService, ExchangePair, orderParams){
+    constructor(exchangeService){
         this.exchangeService = exchangeService
-        this.orderParams = orderParams
-        this.ExchangePair = ExchangePairs
+        // this.orderParams = orderParams
+        // this.ExchangePair = ExchangePair
     }
 
     async fetchBalanceOnExchange(){
@@ -35,8 +35,8 @@ class ExchangeIntegration{
         console.log("fetch balance:", service);
         return service
     }
-    async placeOrderOnExchange(ExchangePair, orderParams){
-        const service = await this.exchangeService.placeOrderOnExchange(ExchangePair, orderParams);
+    async placeOrderOnExchange(parameters){
+        const service = await this.exchangeService.placeOrderOnExchange(parameters);
         console.log("Place AN Order:", service);
         return service
     }
@@ -110,16 +110,18 @@ const exchangeService = {
 const bots = [
     {
         Asset: {
-            Trading_Pair: "BTC/USDT",
+            Trading_Pair: "BTCUSDT",
             Strategy: "LONG",
         },
         Trade_Parameter: {
-            Fund_Allocation: 100,
+            Fund_Allocation: 240000,
             Order_Type: "MARKET",
             Exit_Order_Type: "MARKET",
-            Base_Order_Limit: 30.000,
+            Base_Order_Limit: 40000,
             Base_Order_Type: "STATIC",
             Extra_Orders: 3,
+            side: "BUY",
+            quantity: 1,
             Minimum_price_gap_between_Extra_Orders: 1,
             Trading_Frequency: "5m",
         },
@@ -136,16 +138,18 @@ const bots = [
     },
     {
         Asset: {
-            Trading_Pair: "BTC/USDT",
+            Trading_Pair: "ethusdt",
             Strategy: "LONG",
         },
         Trade_Parameter: {
-            Fund_Allocation: 100,
+            Fund_Allocation: 250000,
             Order_Type: "MARKET",
             Exit_Order_Type: "MARKET",
-            Base_Order_Limit: 30.000,
+            Base_Order_Limit: 50000,
             Base_Order_Type: "STATIC",
             Extra_Orders: 3,
+            type: "sell-market",
+            quantity: 1,
             Minimum_price_gap_between_Extra_Orders: 1,
             Trading_Frequency: "5m",
         },
@@ -158,20 +162,22 @@ const bots = [
             Indicator_Triggers: "RSI",
             Minimum_Profit_for_Indicator_Trigger: 1,
         },
-        Exchange: 13
+        Exchange: 0
     },
     {
         Asset: {
-            Trading_Pair: "BTC/USDT",
+            Trading_Pair: "BTCUSDT",
             Strategy: "LONG",
         },
         Trade_Parameter: {
-            Fund_Allocation: 100,
+            Fund_Allocation: 240000,
             Order_Type: "MARKET",
             Exit_Order_Type: "MARKET",
-            Base_Order_Limit: 30.000,
+            Base_Order_Limit: 40000,
             Base_Order_Type: "STATIC",
             Extra_Orders: 3,
+            side: "BUY",
+            quantity: 1,
             Minimum_price_gap_between_Extra_Orders: 1,
             Trading_Frequency: "5m",
         },
@@ -184,8 +190,8 @@ const bots = [
             Indicator_Triggers: "RSI",
             Minimum_Profit_for_Indicator_Trigger: 1,
         },
-        Exchange: 1 
-    }
+        Exchange: 1
+    },
 ];
 
 
@@ -200,13 +206,18 @@ for (let i = 0; i < bots.length; i++) {
     console.log("just checking", exchangeIndex);
 
     const selectedExchangeService = exchangeService[exchangeIndex]; 
+    const parameters = {
+        symbol : bot.Asset.Trading_Pair,
+        side : bot.Trade_Parameter.side,
+        price : bot.Trade_Parameter.Base_Order_Limit,
+        type : bot.Trade_Parameter.type || bot.Trade_Parameter.Order_Type,
+        quantity: bot.Trade_Parameter.quantity,
+    }
     
     if (selectedExchangeService) {
-        const exchangeIntegration = new ExchangeIntegration(selectedExchangeService,ExchangePair, OrderParam);  
-            await exchangeIntegration.placeOrderOnExchange(ExchangePair, OrderParam);
+        const exchangeIntegration = new ExchangeIntegration(selectedExchangeService );  
+            await exchangeIntegration.placeOrderOnExchange(parameters);
     } else {
         console.log(`No exchange service found for Bot ${i + 1}`);
     }
 }
-
-
