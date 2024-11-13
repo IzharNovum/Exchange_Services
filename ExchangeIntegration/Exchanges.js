@@ -14,6 +14,7 @@ import TokoCrypto from "../Services/TokoCrypto.js";
 import OkexService from "../Services/Okex_Service.js";
 import Kraken_Service from "../Services/Kraken_Service.js";
 import OrderParam from "../Models/OrderParam.js";
+import ExchangePair from "../Models/ExchangePair.js";
 
 
 
@@ -23,9 +24,10 @@ import OrderParam from "../Models/OrderParam.js";
  * Common Exchange to call the exchanges
  */
 class ExchangeIntegration{
-    constructor(exchangeService, orderParams){
+    constructor(exchangeService, ExchangePair, orderParams){
         this.exchangeService = exchangeService
         this.orderParams = orderParams
+        this.ExchangePair = ExchangePairs
     }
 
     async fetchBalanceOnExchange(){
@@ -33,8 +35,8 @@ class ExchangeIntegration{
         console.log("fetch balance:", service);
         return service
     }
-    async placeOrderOnExchange(orderParams){
-        const service = await this.exchangeService.placeOrderOnExchange(orderParams);
+    async placeOrderOnExchange(ExchangePair, orderParams){
+        const service = await this.exchangeService.placeOrderOnExchange(ExchangePair, orderParams);
         console.log("Place AN Order:", service);
         return service
     }
@@ -200,8 +202,8 @@ for (let i = 0; i < bots.length; i++) {
     const selectedExchangeService = exchangeService[exchangeIndex]; 
     
     if (selectedExchangeService) {
-        const exchangeIntegration = new ExchangeIntegration(selectedExchangeService, OrderParam);  
-            await exchangeIntegration.placeOrderOnExchange(OrderParam);
+        const exchangeIntegration = new ExchangeIntegration(selectedExchangeService,ExchangePair, OrderParam);  
+            await exchangeIntegration.placeOrderOnExchange(ExchangePair, OrderParam);
     } else {
         console.log(`No exchange service found for Bot ${i + 1}`);
     }
