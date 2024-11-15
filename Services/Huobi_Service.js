@@ -19,7 +19,7 @@ class huobiExchange{
     static STATUS_FILLED = "filled";
     static STATUS_ONGOING = "ongoing";
   
-    static STATUS_OPENS_CCXT = ["open", "new", "NEW", "ongoing"];
+    static STATUS_OPENS_CCXT = ["open", "new", "NEW", "ongoing"]
     static STATUS_CANCELS_CCXT = ["CANCELLED", "cancelled", "CANCELED"];
     static STATUS_FILLED_CCXT = ["FILLED", "filled", "closed", "CLOSED"];
   
@@ -44,8 +44,8 @@ class huobiExchange{
       /**
        * Instance of the classes.
        */
-      static OrderParam =  new OrderParam();
-      static ExchangePair =  new ExchangePair();
+    //   static OrderParam =  new OrderParam();
+    //   static ExchangePair =  new ExchangePair();
 
 
     static userName = process.env.USER_NAME;
@@ -273,16 +273,17 @@ class huobiExchange{
      * @see https://huobiapi.github.io/docs/spot/v1/en/#place-a-new-order
      */
 
-    static async placeOrderOnExchange({symbol, side, price, quantity}){
-    // static async placeOrderOnExchange(ExchangePair, OrderParam){
+    // static async placeOrderOnExchange({symbol, side, price, quantity}){
+    static async placeOrderOnExchange(ExchangePair, OrderParam, symbol){
 
         try {
             const params = this.buildQueryParams({
                 "account-id" : ExchangePair.getAccID(),
-                symbol: symbol,
-                type: side,
-                price: price,
-                amount: quantity
+                symbol: OrderParam.getSymbol(),
+                type: OrderParam.getSide(),
+                price: OrderParam.getPrice(),
+                amount: OrderParam.getQty(),
+
             });
 
             const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");

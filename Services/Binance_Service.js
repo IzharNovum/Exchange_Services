@@ -259,13 +259,15 @@ class BinanceService {
    * @see https://developers.binance.com/docs/binance-spot-api-docs/rest-api#new-order-trade
    */
 
-  static async placeOrderOnExchange({symbol, side, type, quantity}) {
+  static async placeOrderOnExchange(ExchangePair, OrderParam, symbol) {
     try {
       const params = this.buildQueryParams({
         symbol: symbol,
-        side: side,
-        type: type,
-        quantity: quantity
+        side: OrderParam.getSide(),
+        type: OrderParam.getType(),
+        price: OrderParam.getPrice(),
+        quantity: OrderParam.getQty(),
+        timeInForce: ExchangePair.getTimeinForce()
       });
 
       const response = await this.callExchangeAPI(

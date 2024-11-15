@@ -24,10 +24,10 @@ import ExchangePair from "../Models/ExchangePair.js";
  * Common Exchange to call the exchanges
  */
 class ExchangeIntegration{
-    constructor(exchangeService){
+    constructor(exchangeService, orderParams, ExchangePair){
         this.exchangeService = exchangeService
-        // this.orderParams = orderParams
-        // this.ExchangePair = ExchangePair
+        this.orderParams = orderParams
+        this.ExchangePair = ExchangePair
     }
 
     async fetchBalanceOnExchange(){
@@ -35,8 +35,8 @@ class ExchangeIntegration{
         console.log("fetch balance:", service);
         return service
     }
-    async placeOrderOnExchange(parameters){
-        const service = await this.exchangeService.placeOrderOnExchange(parameters);
+    async placeOrderOnExchange(ExchangePair, OrderParam, parameters){
+        const service = await this.exchangeService.placeOrderOnExchange(ExchangePair, OrderParam, parameters);
         console.log("Place AN Order:", service);
         return service
     }
@@ -120,8 +120,6 @@ const bots = [
             Base_Order_Limit: 40000,
             Base_Order_Type: "STATIC",
             Extra_Orders: 3,
-            side: "BUY",
-            quantity: 1,
             Minimum_price_gap_between_Extra_Orders: 1,
             Trading_Frequency: "5m",
         },
@@ -148,8 +146,6 @@ const bots = [
             Base_Order_Limit: 50000,
             Base_Order_Type: "STATIC",
             Extra_Orders: 3,
-            type: "sell-market",
-            quantity: 1,
             Minimum_price_gap_between_Extra_Orders: 1,
             Trading_Frequency: "5m",
         },
@@ -176,8 +172,6 @@ const bots = [
             Base_Order_Limit: 40000,
             Base_Order_Type: "STATIC",
             Extra_Orders: 3,
-            side: "BUY",
-            quantity: 1,
             Minimum_price_gap_between_Extra_Orders: 1,
             Trading_Frequency: "5m",
         },
@@ -207,17 +201,14 @@ for (let i = 0; i < bots.length; i++) {
 
     const selectedExchangeService = exchangeService[exchangeIndex]; 
     const parameters = {
-        symbol : bot.Asset.Trading_Pair,
-        side : bot.Trade_Parameter.side,
-        price : bot.Trade_Parameter.Base_Order_Limit,
-        type : bot.Trade_Parameter.type || bot.Trade_Parameter.Order_Type,
-        quantity: bot.Trade_Parameter.quantity,
+        symbol : bot.Asset.Trading_Pair
     }
     
     if (selectedExchangeService) {
         const exchangeIntegration = new ExchangeIntegration(selectedExchangeService );  
-            await exchangeIntegration.placeOrderOnExchange(parameters);
+            await exchangeIntegration.placeOrderOnExchange(ExchangePair, OrderParam, parameters);
     } else {
         console.log(`No exchange service found for Bot ${i + 1}`);
     }
 }
+
