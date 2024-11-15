@@ -42,8 +42,8 @@ class BinanceService {
   /**
    * Instance of the classes.
    */
-  // static OrderParam = new OrderParam();
-  // static ExchangePair = new ExchangePair();
+  static OrderParam = new OrderParam();
+  static ExchangePair = new ExchangePair();
 
   static getBaseUrl() {
     return "https://api.binance.com";

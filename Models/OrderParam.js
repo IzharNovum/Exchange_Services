@@ -42,23 +42,31 @@ class OrderParam {
     }
 
     static getSide() {
-        return this.side;
+        // return this.side;
+        return this.SIDE_BUY
     }
 
     static getQty() {
-        return this.qty;
+        // return this.qty;
+        return 1;
     }
 
      static getPrice() {
-        return this.price;
+        // return this.price;
+        return 32092
     };
 
     static getType() {
-        return this.orderType;
+        // return this.orderType;
+        return this.TYPE_LIMIT;
     }
 
+
+    static seType(){
+        return this.SIDE_BUY +  "-" + this.TYPE_MARKET;
+    }
     setType(orderType) {
-        this.orderType = orderType;
+        return this.orderType = orderType;
     }
 
     getSideEffect() {
@@ -154,3 +162,5 @@ class OrderParam {
 
 
 export default OrderParam;
+
+// console.log(OrderParam.seType());

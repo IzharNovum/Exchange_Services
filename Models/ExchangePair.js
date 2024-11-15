@@ -20,14 +20,15 @@ class ExchangePair{
     }
 
     static getTimeinForce(){
-        return this.timeInForce;
+        return this.timeInForce[0];
     }
 
     static getcliendOrderID(){
         return this.cliendOrderID;
     }
     static getAccID(){
-        return this.accountID;
+        // return this.accountID;
+        return 233948934
     }
 
     static getAccntIDUUID(){

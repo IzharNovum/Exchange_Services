@@ -35,8 +35,8 @@ class ExchangeIntegration{
         console.log("fetch balance:", service);
         return service
     }
-    async placeOrderOnExchange(ExchangePair, OrderParam, parameters){
-        const service = await this.exchangeService.placeOrderOnExchange(ExchangePair, OrderParam, parameters);
+    async placeOrderOnExchange(ExchangePair, OrderParam, symbol){
+        const service = await this.exchangeService.placeOrderOnExchange(ExchangePair, OrderParam, symbol);
         console.log("Place AN Order:", service);
         return service
     }
@@ -200,13 +200,13 @@ for (let i = 0; i < bots.length; i++) {
     console.log("just checking", exchangeIndex);
 
     const selectedExchangeService = exchangeService[exchangeIndex]; 
-    const parameters = {
-        symbol : bot.Asset.Trading_Pair
-    }
+    // const parameters = {
+        const symbol = bot.Asset.Trading_Pair
+    // }
     
     if (selectedExchangeService) {
-        const exchangeIntegration = new ExchangeIntegration(selectedExchangeService );  
-            await exchangeIntegration.placeOrderOnExchange(ExchangePair, OrderParam, parameters);
+        const exchangeIntegration = new ExchangeIntegration(selectedExchangeService, ExchangePair, OrderParam);  
+            await exchangeIntegration.placeOrderOnExchange( ExchangePair, OrderParam, symbol);
     } else {
         console.log(`No exchange service found for Bot ${i + 1}`);
     }

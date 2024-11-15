@@ -44,8 +44,8 @@ class huobiExchange{
       /**
        * Instance of the classes.
        */
-    //   static OrderParam =  new OrderParam();
-    //   static ExchangePair =  new ExchangePair();
+      static OrderParam =  new OrderParam();
+      static ExchangePair =  new ExchangePair();
 
 
     static userName = process.env.USER_NAME;
@@ -279,8 +279,8 @@ class huobiExchange{
         try {
             const params = this.buildQueryParams({
                 "account-id" : ExchangePair.getAccID(),
-                symbol: OrderParam.getSymbol(),
-                type: OrderParam.getSide(),
+                symbol: symbol,
+                type: OrderParam.seType().toLowerCase(),
                 price: OrderParam.getPrice(),
                 amount: OrderParam.getQty(),
 
