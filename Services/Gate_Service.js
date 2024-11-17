@@ -209,14 +209,17 @@ class Gate_Service{
      * @see https://www.gate.io/docs/developers/apiv4/en/#create-an-order
      */
 
-    static async placeOrderOnExchange(OrderParam) {
+    static async placeOrderOnExchange(OrderParam, symbol) {
         try {
             const params = this.buildQueryParams({
-                currency_pair: OrderParam.getSymbol(),
+                currency_pair: symbol,
                 side: OrderParam.getSide(),
                 amount: OrderParam.getQty(),
                 price: OrderParam.getPrice(),
-            })
+            });
+
+      console.log("PARAMETERS:", params)
+
           const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
     
           if(this.isError(response)){

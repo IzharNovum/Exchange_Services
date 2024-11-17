@@ -43,7 +43,7 @@ class BinanceService {
    * Instance of the classes.
    */
   static OrderParam = new OrderParam();
-  static ExchangePair = new ExchangePair();
+  // static ExchangePair = new ExchangePair();
 
   static getBaseUrl() {
     return "https://api.binance.com";
@@ -259,16 +259,18 @@ class BinanceService {
    * @see https://developers.binance.com/docs/binance-spot-api-docs/rest-api#new-order-trade
    */
 
-  static async placeOrderOnExchange(ExchangePair, OrderParam, symbol) {
+  static async placeOrderOnExchange(ExchangePair, OrderParam) {
     try {
       const params = this.buildQueryParams({
-        symbol: symbol,
+        symbol: ExchangePair.getSymbol(),
         side: OrderParam.getSide(),
         type: OrderParam.getType(),
         price: OrderParam.getPrice(),
         quantity: OrderParam.getQty(),
         timeInForce: ExchangePair.getTimeinForce()
       });
+
+      console.log("PARAMETERS:", params)
 
       const response = await this.callExchangeAPI(
         this.endPoints.Place_Order,

@@ -32,7 +32,7 @@ class CoinBase_Service{
    * Instance of the classes.
    */
   static OrderParam = new OrderParam();
-  static ExchangePair =  new ExchangePair();
+  // static ExchangePair =  new ExchangePair();
 
   static CB_MAP = {
     '5m' :'FIVE_MINUTE',
@@ -237,9 +237,11 @@ class CoinBase_Service{
         try {
           const params = this.buildQueryParams({
             client_order_id: ExchangePair.getcliendOrderID(),
-            product_id: OrderParam.getSymbol(),
+            product_id: ExchangePair.getSymbol(),
             side: OrderParam.getSide()
           });
+
+          console.log("parameters:", params)
 
           const response = await this.callExchangeApi(this.endPoints.Place_Order, params, "POST");
 

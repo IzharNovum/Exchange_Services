@@ -215,16 +215,19 @@ class Indodax_Services{
      * @returns {Promise<Object>} - Details of the placed order.
      * @see  https://indodax.com/downloads/INDODAXCOM-API-DOCUMENTATION.pdf
      */
-    static async placeOrderOnExchange(ExchangePair, OrderParam){
+    static async placeOrderOnExchange(ExchangePair, OrderParam, symbol){
         try {
             const params = this.buildQueryParams({
                 method : this.endPoints.Place_Order,
-                pair: OrderParam.getSymbol(),
+                pair: symbol,
                 type: OrderParam.getSide(),
                 price: OrderParam.getPrice(),
+                idr : OrderParam.getIDR(),
                 order_type: OrderParam.getType(),
-                time_in_force: ExchangePair.timeInForce()
+                time_in_force: ExchangePair.getTimeinForce()
             });
+      console.log("PARAMETERS:", params)
+
 
             const response = await this.callExchangeAPI("", params);
             console.log("Response From API:", response);

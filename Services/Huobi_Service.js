@@ -45,7 +45,7 @@ class huobiExchange{
        * Instance of the classes.
        */
       static OrderParam =  new OrderParam();
-      static ExchangePair =  new ExchangePair();
+    //   static ExchangePair =  new ExchangePair();
 
 
     static userName = process.env.USER_NAME;
@@ -274,17 +274,19 @@ class huobiExchange{
      */
 
     // static async placeOrderOnExchange({symbol, side, price, quantity}){
-    static async placeOrderOnExchange(ExchangePair, OrderParam, symbol){
+    static async placeOrderOnExchange(ExchangePair, OrderParam){
 
         try {
             const params = this.buildQueryParams({
                 "account-id" : ExchangePair.getAccID(),
-                symbol: symbol,
+                symbol: ExchangePair.getSymbol().toLowerCase(),
                 type: OrderParam.seType().toLowerCase(),
                 price: OrderParam.getPrice(),
                 amount: OrderParam.getQty(),
 
             });
+      console.log("PARAMETERS:", params)
+
 
             const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 

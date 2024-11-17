@@ -3,7 +3,7 @@ class OrderParam {
     static SIDE_BUY = "BUY";
     static SIDE_SELL = "SELL";
     static TYPE_MARKET = "market";
-    static TYPE_LIMIT = "limit";
+    static TYPE_LIMIT = "LIMIT";
     static TYPES = [OrderParam.TYPE_LIMIT, OrderParam.TYPE_MARKET];
     static SIDE_EFFECT_NONE = "NO_SIDE_EFFECT";
 
@@ -46,6 +46,10 @@ class OrderParam {
         return this.SIDE_BUY
     }
 
+    static getIDR(){
+        return 80000;
+    }
+    
     static getQty() {
         // return this.qty;
         return 1;

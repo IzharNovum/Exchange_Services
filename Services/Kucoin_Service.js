@@ -219,11 +219,11 @@ static endPoints = {
  * @returns {Promise<Object>} - Details of placed order
  * @see https://www.kucoin.com/docs/rest/spot-trading/orders/place-order
  */
-    static async placeOrderOnExchange(ExchangePair, OrderParam){
+    static async placeOrderOnExchange(ExchangePair, OrderParam, symbol){
         try {
             const params = this.buidlQueryParams({
                 clientOid : ExchangePair.getcliendOrderID(),
-                symbol: OrderParam.getSymbol(),
+                symbol: symbol,
                 side: OrderParam.getSide(),
                 price: OrderParam.getPrice(),
                 size:  OrderParam.getQty()

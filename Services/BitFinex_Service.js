@@ -194,7 +194,7 @@ class BitFinex_Service {
   /**
    * Places an order from exchange
    * @async
-   * @param {string} symbol symbol - BTC-USDT
+   * @param {string} symbol symbol - tBTCUSD
    * @param {string} type type - BUY, LIMIT
    * @param {number} price Price - Price of the order
    * @param {number} amount amount - amount of the order
@@ -202,14 +202,16 @@ class BitFinex_Service {
    * @see https://docs.bitfinex.com/reference/rest-auth-submit-order
    */
 
-  static async placeOrderOnExchange(OrderParam) {
+  static async placeOrderOnExchange(OrderParam, symbol) {
     try {
       const params = this.buildQueryParams({
-        symbol: OrderParam.getSymbol(),
-        type: OrderParam.getType(),
+        symbol: symbol,
+        type: OrderParam.getType().toUpperCase(),
         price: OrderParam.getPrice(),
         amount: OrderParam.getQty(),
       });
+      console.log("PARAMETERS:", params)
+
 
       const response = await this.callExchangeAPI(
         this.endPoints.Place_Order,
