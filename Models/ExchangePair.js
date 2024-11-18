@@ -79,7 +79,7 @@ class ExchangePair{
     static getSymbol() {
         if (!this.symbol) {
             this.symbol = `${this.From()}/${this.To()}`;
-            console.log("default symbol");
+            console.warn("default symbol");
         }
         return this.symbol;
     }

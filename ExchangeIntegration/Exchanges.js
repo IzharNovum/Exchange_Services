@@ -78,23 +78,23 @@ export default ExchangeIntegration;
  * @object - Object of the exchage services.
  * @returns {exchangeService} - ExchangeService : OKex, huobi, binance.
  */
-// const exchangeService = {
-    // 0: Huobi_Service,
-    // 1: Binance_Service,
-    // 2: Kraken_Service,
-    // 3: Crypto_Service,
-    // 4: BitFinex_Service,
-    // 5: BitGet_Service,
-    // 6: BitGetFuture_Service,
-    // 7: CoinBase_Service,
-    // 8: Gate_Service,
-    // 9: Indodax_Services,
-    // 10: kucoin_Service,
-    // 11: Kucoin_Future,
-    // 12: Mexc_Service,
-    // 13: TokoCrypto,
-    // 14: OkexService
-// };
+const exchangeService = {
+    0: Huobi_Service,
+    1: Binance_Service,
+    2: Kraken_Service,
+    3: Crypto_Service,
+    4: BitFinex_Service,
+    5: BitGet_Service,
+    6: BitGetFuture_Service,
+    7: CoinBase_Service,
+    8: Gate_Service,
+    9: Indodax_Services,
+    10: kucoin_Service,
+    11: Kucoin_Future,
+    12: Mexc_Service,
+    13: TokoCrypto,
+    14: OkexService
+};
 
 
 /**
@@ -107,126 +107,91 @@ export default ExchangeIntegration;
  * @property {number} Exchange - Index of exchange in exchangeService object
  */
 
-// const bots = [
-//     {
-//         Asset: {
-//             Trading_Pair: "BTCUSDT",
-//             Strategy: "LONG",
-//         },
-//         Trade_Parameter: {
-//             Fund_Allocation: 240000,
-//             Order_Type: "MARKET",
-//             Exit_Order_Type: "MARKET",
-//             Base_Order_Limit: 40000,
-//             Base_Order_Type: "STATIC",
-//             Extra_Orders: 3,
-//             Minimum_price_gap_between_Extra_Orders: 1,
-//             Trading_Frequency: "5m",
-//         },
-//         Entry_Conditions: {
-//             Indicator_Triggers: "RSI"
-//         },
-//         Exit_Conditions: {
-//             Take_Profit_Type: 5,
-//             Stoploss_Type: 2,
-//             Indicator_Triggers: "RSI",
-//             Minimum_Profit_for_Indicator_Trigger: 1,
-//         },
-//         Exchange: 1
-//     },
-//     {
-//         Asset: {
-//             Trading_Pair: "ethusdt",
-//             Strategy: "LONG",
-//         },
-//         Trade_Parameter: {
-//             Fund_Allocation: 250000,
-//             Order_Type: "MARKET",
-//             Exit_Order_Type: "MARKET",
-//             Base_Order_Limit: 50000,
-//             Base_Order_Type: "STATIC",
-//             Extra_Orders: 3,
-//             Minimum_price_gap_between_Extra_Orders: 1,
-//             Trading_Frequency: "5m",
-//         },
-//         Entry_Conditions: {
-//             Indicator_Triggers: "RSI"
-//         },
-//         Exit_Conditions: {
-//             Take_Profit_Type: 5,
-//             Stoploss_Type: 2,
-//             Indicator_Triggers: "RSI",
-//             Minimum_Profit_for_Indicator_Trigger: 1,
-//         },
-//         Exchange: 0
-//     },
-//     {
-//         Asset: {
-//             Trading_Pair: "BTC-USD",
-//             Strategy: "LONG",
-//         },
-//         Trade_Parameter: {
-//             Fund_Allocation: 240000,
-//             Order_Type: "MARKET",
-//             Exit_Order_Type: "MARKET",
-//             Base_Order_Limit: 40000,
-//             Base_Order_Type: "STATIC",
-//             Extra_Orders: 3,
-//             Minimum_price_gap_between_Extra_Orders: 1,
-//             Trading_Frequency: "5m",
-//         },
-//         Entry_Conditions: {
-//             Indicator_Triggers: "RSI"
-//         },
-//         Exit_Conditions: {
-//             Take_Profit_Type: 5,
-//             Stoploss_Type: 2,
-//             Indicator_Triggers: "RSI",
-//             Minimum_Profit_for_Indicator_Trigger: 1,
-//         },
-//         Exchange: 7
-//     }
-// ];
+const bots = [
+    {
+        Asset: {
+            Trading_Pair: "BTCUSDT",
+            Strategy: "LONG",
+        },
+        Trade_Parameter: {
+            Fund_Allocation: 240000,
+            Order_Type: "MARKET",
+            Exit_Order_Type: "MARKET",
+            Base_Order_Limit: 40000,
+            Base_Order_Type: "STATIC",
+            Extra_Orders: 3,
+            Minimum_price_gap_between_Extra_Orders: 1,
+            Trading_Frequency: "5m",
+        },
+        Entry_Conditions: {
+            Indicator_Triggers: "RSI"
+        },
+        Exit_Conditions: {
+            Take_Profit_Type: 5,
+            Stoploss_Type: 2,
+            Indicator_Triggers: "RSI",
+            Minimum_Profit_for_Indicator_Trigger: 1,
+        },
+        Exchange: 1
+    },
+    {
+        Asset: {
+            Trading_Pair: "ethusdt",
+            Strategy: "LONG",
+        },
+        Trade_Parameter: {
+            Fund_Allocation: 250000,
+            Order_Type: "MARKET",
+            Exit_Order_Type: "MARKET",
+            Base_Order_Limit: 50000,
+            Base_Order_Type: "STATIC",
+            Extra_Orders: 3,
+            Minimum_price_gap_between_Extra_Orders: 1,
+            Trading_Frequency: "5m",
+        },
+        Entry_Conditions: {
+            Indicator_Triggers: "RSI"
+        },
+        Exit_Conditions: {
+            Take_Profit_Type: 5,
+            Stoploss_Type: 2,
+            Indicator_Triggers: "RSI",
+            Minimum_Profit_for_Indicator_Trigger: 1,
+        },
+        Exchange: 0
+    },
+    {
+        Asset: {
+            Trading_Pair: "BTC-USD",
+            Strategy: "LONG",
+        },
+        Trade_Parameter: {
+            Fund_Allocation: 240000,
+            Order_Type: "MARKET",
+            Exit_Order_Type: "MARKET",
+            Base_Order_Limit: 40000,
+            Base_Order_Type: "STATIC",
+            Extra_Orders: 3,
+            Minimum_price_gap_between_Extra_Orders: 1,
+            Trading_Frequency: "5m",
+        },
+        Entry_Conditions: {
+            Indicator_Triggers: "RSI"
+        },
+        Exit_Conditions: {
+            Take_Profit_Type: 5,
+            Stoploss_Type: 2,
+            Indicator_Triggers: "RSI",
+            Minimum_Profit_for_Indicator_Trigger: 1,
+        },
+        Exchange: 7
+    }
+];
 
-
-/**
- * Processes each bot with the associated exchange service.
- * @returns {Promise<result>} - Exchange Result
- */
-
-// for (let i = 0; i < bots.length; i++) {
-//     const bot = bots[i];
-//     const exchangeIndex = bot.Exchange;
-//     console.log("just checking", exchangeIndex);
-
-//     const selectedExchangeService = exchangeService[exchangeIndex]; 
-//     // const parameters = {
-//         const symbol = bot.Asset.Trading_Pair
-//     // }
-    
-//     if (selectedExchangeService) {
-//         const exchangeIntegration = new ExchangeIntegration(selectedExchangeService, ExchangePair, OrderParam);  
-//             await exchangeIntegration.placeOrderOnExchange( ExchangePair, OrderParam, symbol);
-//     } else {
-//         console.log(`No exchange service found for Bot ${i + 1}`);
-//     }
-// }
-
-
-
-
-/**
- * TESTING THE SYMBOL
- */
-const exchangeService = {
-    0: Huobi_Service,
-    1: Binance_Service,
-    7: CoinBase_Service,
-};
 
 function getSymbol(exchange) {
     let from = ExchangePair.From();
-    let to = ExchangePair.To(); 
+    let to = ExchangePair.To();
     let symbol = "";
 
     switch (exchange) {
@@ -246,15 +211,31 @@ function getSymbol(exchange) {
     return symbol;
 }
 
-for (const key in exchangeService) {
-    const exchange = exchangeService[key];
+/**
+ * Processes each bot with the associated exchange service.
+ * @returns {Promise<result>} - Exchange Result
+ */
 
+for (let i = 0; i < bots.length; i++) {
+    const bot = bots[i];
+    const exchange = bot.Exchange;
+    console.log("just checking", exchange);
+    const selectedExchangeService = exchangeService[exchange]; 
+    
     ExchangePair.setPair("BTC", "USDT");
-    const symbol = getSymbol(exchange);
+    const symbol = getSymbol(selectedExchangeService);
     ExchangePair.setSymbol(symbol);
 
-    const exchangeIntegration = new ExchangeIntegration(exchange, ExchangePair, OrderParam);
-    await exchangeIntegration.placeOrderOnExchange(ExchangePair, OrderParam);
+    if (selectedExchangeService) {
+        const exchangeIntegration = new ExchangeIntegration(selectedExchangeService, ExchangePair, OrderParam);  
+            await exchangeIntegration.placeOrderOnExchange( ExchangePair, OrderParam);
+    } else {
+        console.log(`No exchange service found for Bot ${i + 1}`);
+    }
 }
+
+
+
+
 
 
