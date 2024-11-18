@@ -42,7 +42,7 @@ class BinanceService {
   /**
    * Instance of the classes.
    */
-  static OrderParam = new OrderParam();
+  // static OrderParam = new OrderParam();
   // static ExchangePair = new ExchangePair();
 
   static getBaseUrl() {
@@ -267,7 +267,9 @@ class BinanceService {
         type: OrderParam.getType(),
         price: OrderParam.getPrice(),
         quantity: OrderParam.getQty(),
-        timeInForce: ExchangePair.getTimeinForce()
+        // timeInForce: ExchangePair.getTimeinForce()
+        timeInForce: "GTC"
+
       });
 
       console.log("PARAMETERS:", params)

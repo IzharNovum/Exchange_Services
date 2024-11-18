@@ -2,7 +2,7 @@ class OrderParam {
 
     static SIDE_BUY = "BUY";
     static SIDE_SELL = "SELL";
-    static TYPE_MARKET = "market";
+    static TYPE_MARKET = "MARKET";
     static TYPE_LIMIT = "LIMIT";
     static TYPES = [OrderParam.TYPE_LIMIT, OrderParam.TYPE_MARKET];
     static SIDE_EFFECT_NONE = "NO_SIDE_EFFECT";
@@ -10,17 +10,17 @@ class OrderParam {
 
 
     constructor(
-        symbol,
         side,
+        idr,
         quantity,
         price,
         orderType = OrderParam.TYPE_LIMIT,
         sideEffect = OrderParam.SIDE_EFFECT_NONE,
         options = {}
     ) {
-        this.symbol = symbol;
         this.side = side;
         this.qty = quantity;
+        this.idr = idr;
         this.price = price;
         this.orderType = orderType;
         this.sideEffect = sideEffect;
@@ -37,39 +37,38 @@ class OrderParam {
         return !this.side;
     }
 
-    static getSymbol(){
-        return this.symbol;
-    }
-
     static getSide() {
-        // return this.side;
-        return this.SIDE_BUY
+        return this.side = OrderParam.SIDE_BUY;
     }
 
     static getIDR(){
-        return 80000;
+        return this.idr;
     }
-    
+
     static getQty() {
-        // return this.qty;
-        return 1;
+        return this.qty;
+    }
+
+    static setQty(quantity){
+        this.qty = quantity;
     }
 
      static getPrice() {
-        // return this.price;
-        return 32092
+        return this.price;
     };
 
-    static getType() {
-        // return this.orderType;
-        return this.TYPE_LIMIT;
+    static setPrice(price){
+        this.price = price;
     }
 
+    static getType() {
+        return this.orderType;
+    }
 
     static seType(){
         return this.SIDE_BUY +  "-" + this.TYPE_MARKET;
     }
-    setType(orderType) {
+    static setType(orderType) {
         return this.orderType = orderType;
     }
 
@@ -166,5 +165,3 @@ class OrderParam {
 
 
 export default OrderParam;
-
-// console.log(OrderParam.seType());

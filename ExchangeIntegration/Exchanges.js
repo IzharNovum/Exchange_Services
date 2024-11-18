@@ -211,6 +211,8 @@ function getSymbol(exchange) {
     return symbol;
 }
 
+
+
 /**
  * Processes each bot with the associated exchange service.
  * @returns {Promise<result>} - Exchange Result
@@ -225,6 +227,11 @@ for (let i = 0; i < bots.length; i++) {
     ExchangePair.setPair("BTC", "USDT");
     const symbol = getSymbol(selectedExchangeService);
     ExchangePair.setSymbol(symbol);
+    ExchangePair.setAccID(293823293);
+    ExchangePair.setCliendOrderID("c5f682ed-7108-4f1c-b755-972fcdca0f02");
+    OrderParam.setPrice(80000);
+    OrderParam.setQty(1);
+    OrderParam.setType("LIMIT");
 
     if (selectedExchangeService) {
         const exchangeIntegration = new ExchangeIntegration(selectedExchangeService, ExchangePair, OrderParam);  
@@ -233,9 +240,3 @@ for (let i = 0; i < bots.length; i++) {
         console.log(`No exchange service found for Bot ${i + 1}`);
     }
 }
-
-
-
-
-
-

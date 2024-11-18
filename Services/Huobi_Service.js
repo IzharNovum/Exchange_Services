@@ -44,7 +44,7 @@ class huobiExchange{
       /**
        * Instance of the classes.
        */
-      static OrderParam =  new OrderParam();
+    //   static OrderParam =  new OrderParam();
     //   static ExchangePair =  new ExchangePair();
 
 

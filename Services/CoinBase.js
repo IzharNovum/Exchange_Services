@@ -31,7 +31,7 @@ class CoinBase_Service{
   /**
    * Instance of the classes.
    */
-  static OrderParam = new OrderParam();
+  // static OrderParam = new OrderParam();
   // static ExchangePair =  new ExchangePair();
 
   static CB_MAP = {

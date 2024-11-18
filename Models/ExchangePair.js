@@ -2,74 +2,62 @@ import BinanceService from "../Services/Binance_Service.js";
 import CoinBase_Service from "../Services/CoinBase.js";
 import huobiExchange from "../Services/Huobi_Service.js";
 
-class ExchangePair{
-
+class ExchangePair {
     static timeInForce = ["GTC", "IOC", "FOK", "post_only"];
 
     constructor(
-        
         from,
         to,
         symbol,
         cliendOrderID,
-        accountID,
         accntIDUUID,
         leverage,
         tgtCcy,
         tdMode
-    ){
-        this.from = from,
-        this.to = to,
-        this.symbol = symbol,
+    ) {
+        this.from = from;
+        this.to = to;
+        this.symbol = symbol;
         this.cliendOrderID = cliendOrderID;
-        this.accountID = accountID;
+        this.accountID = this.accountID;
         this.accntIDUUID = accntIDUUID;
         this.leverage = leverage;
         this.tgtCcy = tgtCcy;
-        this.tdMode = tdMode
+        this.tdMode = tdMode;
     }
 
-    static getTimeinForce(){
+    static getTimeInForce() {
         return this.timeInForce[0];
     }
 
-    static getcliendOrderID(){
-        // return this.cliendOrderID;
-        return "384734bgbc78374374";
-    }
-    static getAccID(){
-        // return this.accountID;
-        return 233948934
+    static getcliendOrderID() {
+        return this.cliendOrderID;
     }
 
-    static getAccntIDUUID(){
-        return this.accntIDUUID;
+    static setCliendOrderID(id) {
+        this.cliendOrderID = id;
     }
 
-    static getLeverage(){
-        return this.leverage;
+    static getAccID() {
+        return this.accountID;
     }
 
-    static getTdMode(){
-        return this.tdMode;
+    static setAccID(accountID) {
+        this.accountID = accountID;
     }
-
-    static gettgtCcy(){
-        return this.tgtCcy;
-    }
-
 
     static setPair(from, to) {
         this.from = from;
         this.to = to;
     }
 
+
     static From() {
         return this.from;
     }
 
-    static To() {
-        return this.to; 
+    static  To() {
+        return this.to;
     }
 
     static setSymbol(symbol) {
@@ -83,10 +71,8 @@ class ExchangePair{
         }
         return this.symbol;
     }
-
 }
 
+
+
 export default ExchangePair;
-
-
-// console.log("checking:",  ExchangePair.getSymbol())
