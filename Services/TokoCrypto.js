@@ -39,14 +39,7 @@ class TokoCrypto {
       '1d' :'1d',
   };
 
-
-  static OrderParam = new OrderParam();
-
-
-    static userName = process.env.USER_NAME;
-
-
-
+  
   static getBaseUrl() {
     return "https://www.tokocrypto.com";
   }
@@ -231,10 +224,10 @@ class TokoCrypto {
          * @see https://www.tokocrypto.com/apidocs/#new-order--signed
          */
 
-        static async placeOrderOnExchange(OrderParam){
+        static async placeOrderOnExchange(ExchangePair, OrderParam){
             try {
                 const params = this.buildQueryParams({
-                    symbol : OrderParam.getSymbol(),
+                    symbol : ExchangePair.getSymbol().toUpperCase(),
                     side : OrderParam.getSide(),
                     type : OrderParam.getType(),
                     quantity : OrderParam.getQty(),

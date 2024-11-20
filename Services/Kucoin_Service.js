@@ -40,14 +40,6 @@ class kucoin_Service{
         '1d' :'1day',
       };
 
-
-      /**
-       * Instance of the classes
-       */
-      static OrderParam = new OrderParam();
-      static ExchangePair = new ExchangePair();
-
-
 static getBaseUrl(){
     return "https://api.kucoin.com";
 }
@@ -59,7 +51,6 @@ static buidlQueryParams(params){
 }
 
 static endPoints = {
-    // Balance: "/api/v1/accounts",
     Balance:(accountId) => `/api/v1/accounts/${accountId}`,
     Place_Order : "/api/v1/orders",
     Pending_Order : "/api/v1/limit/orders",
@@ -219,11 +210,11 @@ static endPoints = {
  * @returns {Promise<Object>} - Details of placed order
  * @see https://www.kucoin.com/docs/rest/spot-trading/orders/place-order
  */
-    static async placeOrderOnExchange(ExchangePair, OrderParam, symbol){
+    static async placeOrderOnExchange(ExchangePair, OrderParam){
         try {
             const params = this.buidlQueryParams({
                 clientOid : ExchangePair.getcliendOrderID(),
-                symbol: symbol,
+                symbol: ExchangePair.getSymbol().toUpperCase(),
                 side: OrderParam.getSide(),
                 price: OrderParam.getPrice(),
                 size:  OrderParam.getQty()

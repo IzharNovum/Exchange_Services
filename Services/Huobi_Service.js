@@ -41,12 +41,6 @@ class huobiExchange{
         "1M": "1mon",
       };
 
-      /**
-       * Instance of the classes.
-       */
-    //   static OrderParam =  new OrderParam();
-    //   static ExchangePair =  new ExchangePair();
-
 
     static userName = process.env.USER_NAME;
 

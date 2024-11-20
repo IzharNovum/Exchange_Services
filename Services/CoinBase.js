@@ -237,7 +237,7 @@ class CoinBase_Service{
         try {
           const params = this.buildQueryParams({
             client_order_id: ExchangePair.getcliendOrderID(),
-            product_id: ExchangePair.getSymbol(),
+            product_id: ExchangePair.getSymbol().toUpperCase(),
             side: OrderParam.getSide()
           });
 

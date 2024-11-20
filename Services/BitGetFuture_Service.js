@@ -4,6 +4,7 @@ import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import OrderParam from "../Models/OrderParam.js";
+import ExchangePair from "../Models/ExchangePair.js";
 
 class BitGetFuture_Service extends BitGet_Service {
 
@@ -43,10 +44,6 @@ class BitGetFuture_Service extends BitGet_Service {
         spot : 'USDT-FUTURES',
      }
     
-     /**
-      * Instance of the classes
-      */
-     static OrderParam = new OrderParam();
 
     static buildQueryParams(params){
         return BitGet_Service.buildQueryParams(params);
@@ -141,22 +138,17 @@ class BitGetFuture_Service extends BitGet_Service {
      * @see https://www.bitget.com/api-doc/contract/trade/Place-Order
      */
 
-       static async placeOrderOnExchange(OrderParam, marginCoin){
+       static async placeOrderOnExchange(ExchangePair, OrderParam){
         try {
-            const marginMode = OrderParam.getChOption('margin_mode') || 'crossed';
             const params =  this.buildQueryParams({
-                symbol: OrderParam.getSymbol(),
-                productType: this.PRODUCT_TYPES[productType],
-                marginCoin: marginCoin,
-                marginMode: marginMode,
+                symbol: ExchangePair.getSymbol().toUpperCase(),
+                productType: this.PRODUCT_TYPES[productType.usd_m],
+                marginCoin: ExchangePair.getMarginCoin().toUpperCase(),
+                marginMode: ExchangePair.getMarginMode(),
                 size: OrderParam.getQty(),
                 side: OrderParam.getSide(),
                 orderType: OrderParam.getType()
             });
-
-            if (marginMode === "crossed") {
-                params.tradeSide = OrderParam.getChOption('tradeSide') || 'Open';
-            }
 
             const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 

@@ -4,6 +4,7 @@ import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import OrderParam from "../Models/OrderParam.js";
+import ExchangePair from "../Models/ExchangePair.js";
 
 class Kraken {
 
@@ -33,8 +34,6 @@ class Kraken {
     "4h": "240",
     "1d": "1440"
   };
-
-  static OrderParam = new OrderParam();
 
 
   static getBaseUrl() {
@@ -235,13 +234,13 @@ class Kraken {
        * @returns {Promise<Object>} - Details of the placed order.
        * @see https://docs.kraken.com/api/docs/rest-api/add-order
        */
-  static async placeOrderOnExchange(OrderParam) {
+  static async placeOrderOnExchange(ExchangePair, OrderParam) {
     try {
       const params = this.buildQueryParams({
         ordertype: OrderParam.getType(),
         type: OrderParam.getSide(),
         volume: OrderParam.getQty(),
-        pair: OrderParam.getSymbol(),
+        pair: ExchangePair.getSymbol().toUpperCase(),
         price: OrderParam.getPrice(),
       });
 

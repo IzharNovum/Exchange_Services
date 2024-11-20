@@ -4,6 +4,7 @@ import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import OrderParam from "../Models/OrderParam.js";
+import ExchangePair from "../Models/ExchangePair.js";
 
 
 
@@ -44,10 +45,6 @@ class Crypto {
     return params;
   }
 
-  /**
-   * Instance of the classes.
-   */
-  static OrderParam = new OrderParam();
 
   static endPoints = {
     Balance : "private/user-balance",
@@ -223,10 +220,10 @@ static async fetchBalanceOnExchange() {
  * @see https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html#private-create-order
  */
 
-  static async placeOrderOnExchange(OrderParam) {
+  static async placeOrderOnExchange(ExchangePair, OrderParam) {
     try {
       const params = this.buildQueryParams({
-        instrument_name: OrderParam.getSymbol(),
+        instrument_name: ExchangePair.getSymbol().toUpperCase(),
         side: OrderParam.getSide(),
         type: OrderParam.getType(),
         price: OrderParam.getPrice(),

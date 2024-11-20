@@ -35,12 +35,6 @@ class Indodax_Services{
         "1d": "1D"
       };
 
-      /**
-       * Instance of the classes
-       */
-      static OrderParam =  new OrderParam();
-      static ExchangePair = new ExchangePair();
-
     static getBaseUrl(){
         return "https://indodax.com/tapi";
     }
@@ -215,11 +209,11 @@ class Indodax_Services{
      * @returns {Promise<Object>} - Details of the placed order.
      * @see  https://indodax.com/downloads/INDODAXCOM-API-DOCUMENTATION.pdf
      */
-    static async placeOrderOnExchange(ExchangePair, OrderParam, symbol){
+    static async placeOrderOnExchange(ExchangePair, OrderParam){
         try {
             const params = this.buildQueryParams({
                 method : this.endPoints.Place_Order,
-                pair: symbol,
+                pair: ExchangePair.getSymbol().toLowerCase(),
                 type: OrderParam.getSide(),
                 price: OrderParam.getPrice(),
                 idr : OrderParam.getIDR(),

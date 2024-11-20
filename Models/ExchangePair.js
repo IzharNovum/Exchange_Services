@@ -1,9 +1,4 @@
-import BinanceService from "../Services/Binance_Service.js";
-import CoinBase_Service from "../Services/CoinBase.js";
-import huobiExchange from "../Services/Huobi_Service.js";
-
 class ExchangePair {
-    static timeInForce = ["GTC", "IOC", "FOK", "post_only"];
 
     constructor(
         from,
@@ -13,7 +8,9 @@ class ExchangePair {
         accntIDUUID,
         leverage,
         tgtCcy,
-        tdMode
+        tdMode,
+        marginCoin,
+        marginMode
     ) {
         this.from = from;
         this.to = to;
@@ -24,10 +21,16 @@ class ExchangePair {
         this.leverage = leverage;
         this.tgtCcy = tgtCcy;
         this.tdMode = tdMode;
+        this.marginCoin = marginCoin;
+        this.marginMode = marginMode;
     }
 
     static getTimeInForce() {
-        return this.timeInForce[0];
+        return this.timeInForce;
+    }
+
+    static setTimeInForce(TIF){
+        this.timeInForce = TIF
     }
 
     static getcliendOrderID() {
@@ -40,6 +43,22 @@ class ExchangePair {
 
     static getAccID() {
         return this.accountID;
+    }
+
+    static getMarginMode(){
+        return this.marginMode;
+    }
+
+    static setMarginMode(marginMode){
+        this.marginMode = marginMode;
+    }
+
+    static getMarginCoin(){
+        return this.marginCoin;
+    }
+
+    static setMarginCoin(marginCoin){
+        this.marginCoin = marginCoin;
     }
 
     static setAccID(accountID) {

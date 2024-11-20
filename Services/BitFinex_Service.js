@@ -35,7 +35,6 @@ class BitFinex_Service {
     "1D": "1D",
   };
 
-  static OrderParam = new OrderParam();
 
   static getBaseUrl() {
     return "https://api.bitfinex.com/";
@@ -202,10 +201,10 @@ class BitFinex_Service {
    * @see https://docs.bitfinex.com/reference/rest-auth-submit-order
    */
 
-  static async placeOrderOnExchange(OrderParam, symbol) {
+  static async placeOrderOnExchange(OrderParam, ExchangePair) {
     try {
       const params = this.buildQueryParams({
-        symbol: symbol,
+        symbol: ExchangePair.getSymbol().toUpperCase(),
         type: OrderParam.getType().toUpperCase(),
         price: OrderParam.getPrice(),
         amount: OrderParam.getQty(),

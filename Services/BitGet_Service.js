@@ -41,12 +41,6 @@ class BitGet_Service{
         '1w' :'1week',
     };
 
-    /**
-     * Instance of the classes
-     */
-    static OrderParam = new OrderParam();
-    static ExchangePair =  new ExchangePair();
-
     static getBaseUrl(){
         return "https://api.bitget.com";
     }
@@ -58,7 +52,6 @@ class BitGet_Service{
 
     static endPoints = {
         Balance : "/api/v2/spot/account/assets",
-        // Balance : "/api/v2/spot/public/coins",//not yet confirmed about this
         Place_Order : "/api/v2/spot/trade/place-order",
         Pending_Order : "/api/v2/spot/trade/unfilled-orders",
         Cancel_Order : "/api/v2/spot/trade/cancel-order",
@@ -223,7 +216,7 @@ class BitGet_Service{
        static async placeOrderOnExchange(ExchangePair, OrderParam){
         try {
             const params =  this.buildQueryParams({
-                symbol: OrderParam.getSymbol(),
+                symbol: ExchangePair.getSymbol().toUpperCase(),
                 orderType: OrderParam.getType(),
                 side: OrderParam.getSide(),
                 force: ExchangePair.getTimeinForce(),

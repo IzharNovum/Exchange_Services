@@ -4,6 +4,7 @@ import UserOrder from "../Models/UserOrder.js";
 import FetchOrderResultFactory from "../Order_Result/FetchOrderResultFactory.js";
 import CancelOrderResult from "../Order_Result/CancelOrderResult.js";
 import OrderParam from "../Models/OrderParam.js";
+import ExchangePair from "../Models/ExchangePair.js";
 
 
 class Mexc_Service{
@@ -37,12 +38,6 @@ class Mexc_Service{
         '6h' :'6h',
         '1d' :'1d',
     }
-
-    /**
-     * Instance of the classes.
-     */
-    static OrderParam = new OrderParam();
-
 
     static getBaseUrl(){
         return "https://api.mexc.com";
@@ -222,10 +217,10 @@ class Mexc_Service{
  * @see https://mexcdevelop.github.io/apidocs/spot_v3_en/#new-order
  */
 
-       static async placeOrderOnExchange(OrderParam){
+       static async placeOrderOnExchange(ExchangePair, OrderParam){
         try {
             const params =  this.buildQueryParams({
-                symbol: OrderParam.getSymbol(),
+                symbol: ExchangePair.getSymbol().toUpperCase(),
                 side: OrderParam.getSide(),
                 type: OrderParam.getType(),
                 price: OrderParam.getPrice(),

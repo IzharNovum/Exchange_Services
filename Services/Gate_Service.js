@@ -38,11 +38,6 @@ class Gate_Service{
         "1d": "1d",
       };
 
-      /**
-       * Instance of the classes.
-       */
-      static OrderParam =  new OrderParam();
-
 
     static getBaseUrl(){
         return "https://api.gateio.ws/api/v4";
@@ -209,10 +204,10 @@ class Gate_Service{
      * @see https://www.gate.io/docs/developers/apiv4/en/#create-an-order
      */
 
-    static async placeOrderOnExchange(OrderParam, symbol) {
+    static async placeOrderOnExchange(ExchangePair, OrderParam) {
         try {
             const params = this.buildQueryParams({
-                currency_pair: symbol,
+                currency_pair: ExchangePair.getSymbol().toUpperCase(),
                 side: OrderParam.getSide(),
                 amount: OrderParam.getQty(),
                 price: OrderParam.getPrice(),

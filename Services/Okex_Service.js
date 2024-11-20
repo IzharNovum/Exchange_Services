@@ -30,12 +30,6 @@ class OkexService extends NonCcxtExchangeService{
       filled: OkexService.STATUS_FILLED,
     };
 
-    /**
-     * Instance of the classes.
-     */
-    static OrderParam = new OrderParam();
-    static ExchangePair =  new ExchangePair();
-
     static BAR_MAPS = {
       "5m": "5m",
       "15m": "15m",
@@ -240,7 +234,7 @@ static async fetchBalanceFromExchange() {
  static async  placeOrderOnExchange(ExchangePair, OrderParam) {
   try {
     const params = this.buildQueryParams({
-      instId: OrderParam.getSymbol(),
+      instId: ExchangePair.getSymbol().toUpperCase(),
       tdMode: ExchangePair.getTdMode(),
       side: OrderParam.getSide(),
       ordType: OrderParam.getType(),

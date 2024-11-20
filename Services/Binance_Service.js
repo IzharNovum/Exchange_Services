@@ -39,12 +39,6 @@ class BinanceService {
 
   static userName = process.env.USER_NAME;
 
-  /**
-   * Instance of the classes.
-   */
-  // static OrderParam = new OrderParam();
-  // static ExchangePair = new ExchangePair();
-
   static getBaseUrl() {
     return "https://api.binance.com";
   }
@@ -262,13 +256,12 @@ class BinanceService {
   static async placeOrderOnExchange(ExchangePair, OrderParam) {
     try {
       const params = this.buildQueryParams({
-        symbol: ExchangePair.getSymbol(),
+        symbol: ExchangePair.getSymbol().toUpperCase(),
         side: OrderParam.getSide(),
         type: OrderParam.getType(),
         price: OrderParam.getPrice(),
         quantity: OrderParam.getQty(),
-        // timeInForce: ExchangePair.getTimeinForce()
-        timeInForce: "GTC"
+        timeInForce: ExchangePair.getTimeinForce()
 
       });
 

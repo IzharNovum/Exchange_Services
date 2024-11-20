@@ -27,12 +27,6 @@ class Kucoin_Future{
       filled: Kucoin_Future.STATUS_FILLED,
     };
 
-    /**
-     * Instance of the clasees.
-     */
-    static OrderParam = new OrderParam();
-    static ExchangePair =  new ExchangePair();
-
     static INTERVALS = {
         '1m' :'1',
         '5m' :'5',
@@ -167,7 +161,7 @@ static endPoints = {
             const params = this.buildQueryParams({
                 clientOid : ExchangePair.getcliendOrderID(),
                 side : OrderParam.getSide(),
-                symbol: OrderParam.getSymbol(),
+                symbol: ExchangePair.getSymbol().toUpperCase(),
                 leverage: ExchangePair.getLeverage(),
                 price: OrderParam.getPrice(),
                 size: OrderParam.getQty()
