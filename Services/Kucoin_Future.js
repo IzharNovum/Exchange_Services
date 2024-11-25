@@ -158,14 +158,17 @@ static endPoints = {
 
     static async placeOrderOnExchange(ExchangePair, OrderParam){
         try {
+            const symbol = await ExchangePair.getSymbol();
             const params = this.buildQueryParams({
-                clientOid : ExchangePair.getcliendOrderID(),
-                side : OrderParam.getSide(),
-                symbol: ExchangePair.getSymbol().toUpperCase(),
-                leverage: ExchangePair.getLeverage(),
-                price: OrderParam.getPrice(),
-                size: OrderParam.getQty()
+                clientOid : await ExchangePair.getcliendOrderID(),
+                side : await OrderParam.getSide(),
+                symbol: symbol.toUpperCase(),
+                leverage: await ExchangePair.getLeverage(),
+                price: await OrderParam.getPrice(),
+                size: await OrderParam.getQty()
             });
+
+            // console.log("Response", params);
 
             const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 

@@ -222,23 +222,24 @@ static async fetchBalanceOnExchange() {
 
   static async placeOrderOnExchange(ExchangePair, OrderParam) {
     try {
+      const symbol = await ExchangePair.getSymbol();
       const params = this.buildQueryParams({
-        instrument_name: ExchangePair.getSymbol().toUpperCase(),
-        side: OrderParam.getSide(),
-        type: OrderParam.getType(),
-        price: OrderParam.getPrice(),
-        quantity: OrderParam.getQty()
+        instrument_name: symbol.toUpperCase(),
+        side: await OrderParam.getSide(),
+        type: await OrderParam.getType(),
+        price: await OrderParam.getPrice(),
+        quantity: await OrderParam.getQty()
       });
 
       const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 
       if (this.isError(response)) {
-      console.log("Response From Pending Order", response);
+      console.log("Response From Place Order", response);
         const errMsg =
           response.error ?? response.message ?? JSON.stringify(response);
         return PlaceOrderResultFactory.createFalseResult(errMsg, response);
       }
-      console.log("Response From Pending Order", response);
+      console.log("Response From Place Order", response);
 
         return await this.createSuccessPlaceOrderResult(response);  
         // return response

@@ -215,15 +215,16 @@ class BitGet_Service{
 
        static async placeOrderOnExchange(ExchangePair, OrderParam){
         try {
+            const symbol = await ExchangePair.getSymbol();
             const params =  this.buildQueryParams({
-                symbol: ExchangePair.getSymbol().toUpperCase(),
-                orderType: OrderParam.getType(),
-                side: OrderParam.getSide(),
-                force: ExchangePair.getTimeinForce(),
-                price: OrderParam.getPrice(),
-                quantity: OrderParam.getQty(),
+                symbol: symbol.toUpperCase(),
+                orderType: await OrderParam.getType(),
+                side: await OrderParam.getSide(),
+                force: await ExchangePair.getTimeInForce(),
+                price: await OrderParam.getPrice(),
+                quantity: await OrderParam.getQty(),
             });
-
+            // console.log("params", params);
             const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 
             if (this.isError(response)) {

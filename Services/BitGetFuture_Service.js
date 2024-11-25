@@ -138,17 +138,20 @@ class BitGetFuture_Service extends BitGet_Service {
      * @see https://www.bitget.com/api-doc/contract/trade/Place-Order
      */
 
+
        static async placeOrderOnExchange(ExchangePair, OrderParam){
         try {
+            const symbol = await ExchangePair.getSymbol();
             const params =  this.buildQueryParams({
-                symbol: ExchangePair.getSymbol().toUpperCase(),
-                productType: this.PRODUCT_TYPES[productType.usd_m],
-                marginCoin: ExchangePair.getMarginCoin().toUpperCase(),
-                marginMode: ExchangePair.getMarginMode(),
-                size: OrderParam.getQty(),
-                side: OrderParam.getSide(),
-                orderType: OrderParam.getType()
+                symbol: symbol.toUpperCase(),
+                productType: this.PRODUCT_TYPES.usd_m,
+                marginCoin: await ExchangePair.getMarginCoin(),
+                marginMode: await ExchangePair.getMarginMode(),
+                size: await OrderParam.getQty(),
+                side: await OrderParam.getSide(),
+                orderType: await OrderParam.getType()
             });
+
 
             const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 

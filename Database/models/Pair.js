@@ -1,9 +1,9 @@
-import sequelize from "../DB/database";
+import sequelize from "../DB/database.js";
 import { DataTypes, Model } from "sequelize";
 
-class Pair extends Model{}
+class PairModel extends Model{}
 
-Pair.init({
+PairModel.init({
     id: {
         type: DataTypes.INTEGER.UNSIGNED,
         primaryKey: true,
@@ -50,9 +50,9 @@ Pair.init({
     charset: 'utf8mb4',
     collate: 'utf8mb4_unicode_ci',
     engine: 'InnoDB',
-    timestamps: true, 
+    timestamps: false, 
     paranoid: true,
     freezeTableName: true,
 });
 
-export default Pair;
+export default PairModel;

@@ -7,6 +7,7 @@ UserExchange.init({
     id:{
         type: DataTypes.INTEGER.UNSIGNED,
         allowNull: false,
+        primaryKey: true,
         autoIncrement: true,
     },
     user_id:{
@@ -37,12 +38,58 @@ UserExchange.init({
     secret:{
         type: DataTypes.STRING(1000),
         allowNull: false,
-        defaultValue: ''
+        defaultValue: '',
     },
     account:{
         type: DataTypes.STRING(1000),
         allowNull: true,
     },
+    Timeinforce: {
+        type: DataTypes.ENUM('GTC', 'IOC', 'FOK'),
+        allowNull: false,
+      },
+    
+      Marginmode: {
+        type: DataTypes.ENUM('isolated', 'crossed'),
+        allowNull: false,
+      },
+    
+      Margincoin: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+    
+      Leverage: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+    
+      Clientorderid: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true, 
+      },
+    
+
+      Accntuuid: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+    
+      Tgtccy: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+    
+      TdMode: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+    
+      Idr: {
+        type: DataTypes.NUMBER, 
+        allowNull: true,  
+      },
     created_at:{
         type: DataTypes.DATE,
         allowNull: true,

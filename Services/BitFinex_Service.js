@@ -201,15 +201,16 @@ class BitFinex_Service {
    * @see https://docs.bitfinex.com/reference/rest-auth-submit-order
    */
 
-  static async placeOrderOnExchange(OrderParam, ExchangePair) {
+  static async placeOrderOnExchange(ExchangePair, OrderParam) {
     try {
+      const symbol = await ExchangePair.getSymbol();
       const params = this.buildQueryParams({
-        symbol: ExchangePair.getSymbol().toUpperCase(),
-        type: OrderParam.getType().toUpperCase(),
-        price: OrderParam.getPrice(),
-        amount: OrderParam.getQty(),
+        symbol: symbol,
+        type: await OrderParam.getType(),
+        price: await OrderParam.getPrice(),
+        amount: await OrderParam.getQty(),
       });
-      console.log("PARAMETERS:", params)
+      // console.log("PARAMETERS:", params)
 
 
       const response = await this.callExchangeAPI(

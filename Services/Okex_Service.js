@@ -233,15 +233,17 @@ static async fetchBalanceFromExchange() {
  */
  static async  placeOrderOnExchange(ExchangePair, OrderParam) {
   try {
+    const symbol = await ExchangePair.getSymbol();
     const params = this.buildQueryParams({
-      instId: ExchangePair.getSymbol().toUpperCase(),
-      tdMode: ExchangePair.getTdMode(),
-      side: OrderParam.getSide(),
-      ordType: OrderParam.getType(),
-      px: OrderParam.getPrice(),
-      sz: OrderParam.getQty(),
-      tgtCcy: ExchangePair.gettgtCcy(),
+      instId: symbol.toUpperCase(),
+      tdMode: await ExchangePair.tdmode(),
+      side: await OrderParam.getSide(),
+      ordType: await OrderParam.getType(),
+      px: await OrderParam.getPrice(),
+      sz: await OrderParam.getQty(),
     });
+    // console.log("Response", params);
+    
 
     const response = await this.callExchangeApi(this.endPoints.Place_Order, params, "POST");
 

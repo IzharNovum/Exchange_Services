@@ -1,3 +1,5 @@
+import commonParam from "../ExchangeIntegration/CommonParams.js";
+
 class OrderParam {
 
     static SIDE_BUY = "BUY";
@@ -9,17 +11,17 @@ class OrderParam {
 
 
 
-    constructor(
+    constructor({
         side,
-        idr,
         quantity,
+        idr,
         price,
         orderType = OrderParam.TYPE_LIMIT,
         sideEffect = OrderParam.SIDE_EFFECT_NONE,
         options = {}
-    ) {
+    } = {}) {
         this.side = side;
-        this.qty = quantity;
+        this.quantity = quantity;
         this.idr = idr;
         this.price = price;
         this.orderType = orderType;
@@ -41,19 +43,23 @@ class OrderParam {
         return this.side = OrderParam.SIDE_BUY;
     }
 
-    static getIDR(){
+    static async getIDR(){
+        this.idr = await commonParam.Tdmode();
         return this.idr;
+
     }
 
-    static getQty() {
-        return this.qty;
+    static async getQty() {
+        this.quantity = await commonParam.Qty();
+        return this.quantity;
     }
 
     static setQty(quantity){
-        this.qty = quantity;
+        this.quantity = quantity;
     }
 
-     static getPrice() {
+     static async getPrice() {
+        this.price = await commonParam.Price();
         return this.price;
     };
 
@@ -61,7 +67,8 @@ class OrderParam {
         this.price = price;
     }
 
-    static getType() {
+    static async getType() {
+        this.orderType = await commonParam.OrderType();
         return this.orderType;
     }
 

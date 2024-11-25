@@ -15,6 +15,7 @@ import OkexService from "../Services/Okex_Service.js";
 import Kraken_Service from "../Services/Kraken_Service.js";
 import OrderParam from "../Models/OrderParam.js";
 import ExchangePair from "../Models/ExchangePair.js";
+import commonParam from "./CommonParams.js";
 
 
 
@@ -189,75 +190,26 @@ const bots = [
 ];
 
 
-function getSymbol(exchange) {
-    let from = ExchangePair.From();
-    let to = ExchangePair.To();
-    let symbol = "";
-
-    switch (exchange) {
-        case Huobi_Service:
-        case Binance_Service:
-        case Kraken_Service:
-        case BitGetFuture_Service:
-        case Kucoin_Future:
-        case Mexc_Service:
-            symbol = `${from}${to}`;
-            break;
-        case CoinBase_Service:
-        case kucoin_Service:
-        case OkexService:
-            symbol = `${from}-${to}`;
-            break;
-        case Gate_Service:
-        case Indodax_Services:
-        case TokoCrypto:
-            symbol = `${from}_${to}`;
-            break;
-        case BitFinex_Service:
-            symbol = `t${from}${to}`;
-            break;
-        case BitGet_Service:
-            symbol = `${from}${to}_SPBL`;
-            break;
-        case Crypto_Service:
-            symbol = `${from}${to}-PERP`;
-            break;
-        default:
-            console.log("No Exchange or Symbol Found!");
-            break;
-    }
-    return symbol;
-}
-
-
-
 /**
  * Processes each bot with the associated exchange service.
  * @returns {Promise<result>} - Exchange Result
  */
 
-// for (let i = 0; i < bots.length; i++) {
-//     const bot = bots[i];
-//     const exchange = bot.Exchange;
-//     console.log("just checking", exchange);
-//     const selectedExchangeService = exchangeService[exchange]; 
+for (let i = 0; i < bots.length; i++) {
+    const bot = bots[i];
+    const exchange = bot.Exchange;
+    console.log("just checking", exchange);
+    const selectedExchangeService = exchangeService[exchange]; 
     
-//     ExchangePair.setPair("BTC", "USDT");
-//     const symbol = getSymbol(selectedExchangeService);
-//     ExchangePair.setSymbol(symbol);
-//     ExchangePair.setAccID(293823293);
-//     ExchangePair.setTimeInForce("GTC");
-//     ExchangePair.setCliendOrderID("c5f682ed-7108-4f1c-b755-972fcdca0f02");
-//     ExchangePair.setMarginCoin("USDT");
-//     ExchangePair.setMarginMode("isolated");
-//     OrderParam.setPrice(80000);
-//     OrderParam.setQty(1);
-//     OrderParam.setType("LIMIT");
+    ExchangePair.setSymbol(selectedExchangeService);
 
-//     if (selectedExchangeService) {
-//         const exchangeIntegration = new ExchangeIntegration(selectedExchangeService, ExchangePair, OrderParam);  
-//             await exchangeIntegration.placeOrderOnExchange( ExchangePair, OrderParam);
-//     } else {
-//         console.log(`No exchange service found for Bot ${i + 1}`);
-//     }
-// }
+    if (selectedExchangeService) {
+        const exchangeIntegration = new ExchangeIntegration(selectedExchangeService, ExchangePair, OrderParam);  
+            await exchangeIntegration.placeOrderOnExchange( ExchangePair, OrderParam);
+
+    } else {
+        console.log(`No exchange service found for Bot ${i + 1}`);
+    }
+}
+
+

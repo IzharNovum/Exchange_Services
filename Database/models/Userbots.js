@@ -136,7 +136,7 @@ UserBots.init({
   charset: 'utf8mb4',
   collate: 'utf8mb4_unicode_ci',
   engine: 'InnoDB',
-  timestamps: true, 
+  timestamps: false, 
   paranoid: true,
   freezeTableName: true,
 });

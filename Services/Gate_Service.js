@@ -206,11 +206,12 @@ class Gate_Service{
 
     static async placeOrderOnExchange(ExchangePair, OrderParam) {
         try {
+            const symbol = await ExchangePair.getSymbol();
             const params = this.buildQueryParams({
-                currency_pair: ExchangePair.getSymbol().toUpperCase(),
-                side: OrderParam.getSide(),
-                amount: OrderParam.getQty(),
-                price: OrderParam.getPrice(),
+                currency_pair: symbol.toUpperCase(),
+                side: await OrderParam.getSide(),
+                amount: await OrderParam.getQty(),
+                price: await OrderParam.getPrice(),
             });
 
       console.log("PARAMETERS:", params)

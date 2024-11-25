@@ -235,13 +235,14 @@ class CoinBase_Service{
 
       static async placeOrderOnExchange(ExchangePair, OrderParam) {
         try {
+          const symbol = await ExchangePair.getSymbol();
           const params = this.buildQueryParams({
-            client_order_id: ExchangePair.getcliendOrderID(),
-            product_id: ExchangePair.getSymbol().toUpperCase(),
-            side: OrderParam.getSide()
+            client_order_id: await ExchangePair.getcliendOrderID(),
+            product_id: symbol.toUpperCase(),
+            side: await OrderParam.getSide()
           });
 
-          console.log("parameters:", params)
+          // console.log("parameters:", params)
 
           const response = await this.callExchangeApi(this.endPoints.Place_Order, params, "POST");
 

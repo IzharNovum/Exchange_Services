@@ -41,7 +41,7 @@ const routes = [
     }},
     { path: "/Okex-Service/place-order", handler: async (req, res) => {
         try {
-            // const PlaceOrder = await OkexService.placeOrderOnExchange("BTC-USDT", "cash", "buy", "limit", 2.15, 1, "base_ccy");
+            ExchangePair.setSymbol(OkexService);
             const PlaceOrder = await OkexService.placeOrderOnExchange(ExchangePair, OrderParam);
             res.json(PlaceOrder);
         } catch (error) {
@@ -145,6 +145,7 @@ const routes = [
   }},
   { path: "/Huobi-Service/place-order", handler: async (req, res) => {
       try {
+            ExchangePair.setSymbol(HuobiService);
           const FetchOrder = await HuobiService.placeOrderOnExchange(ExchangePair, OrderParam);
           res.json(FetchOrder);
       } catch (error) {
@@ -226,6 +227,7 @@ const routes = [
 
         { path: "/Binance-Service/place-order", handler: async (req, res) => {
             try {
+                ExchangePair.setSymbol(BinanceService);
                 const order = await BinanceService.placeOrderOnExchange(ExchangePair, OrderParam);
                 res.json(order);
             } catch (error) {
@@ -312,8 +314,8 @@ const routes = [
             
                     { path: "/Toko-Service/place-order", handler: async (req, res) => {
                         try {
-                            // const order = await TokoCrypto.placeOrderOnExchange("BTC_USDT", 1, 1, 0.16, 12275.03);
-                            const order = await TokoCrypto.placeOrderOnExchange(OrderParam);
+                            ExchangePair.setSymbol(TokoCrypto);
+                            const order = await TokoCrypto.placeOrderOnExchange(ExchangePair, OrderParam);
                             res.json(order);
                         } catch (error) {
                             //LOG ERROR...
@@ -400,7 +402,7 @@ const routes = [
                             
                                     { path: "/Kucoin-Service/place-order", handler: async (req, res) => {
                                         try {
-                                            // const order = await kucoin_Service.placeOrderOnExchange(382932892, "sell", "BTC-USDT", 23292, 1);
+                                            ExchangePair.setSymbol(kucoin_Service);
                                             const order = await kucoin_Service.placeOrderOnExchange(ExchangePair, OrderParam);
                                             res.json(order);
                                         } catch (error) {
@@ -463,6 +465,7 @@ const routes = [
                                     //Routes For Kucoin Future.
                                     { path: "/Kucoin-Future/place-order", handler: async (req, res) => {
                                         try {
+                                            ExchangePair.setSymbol(Kucoin_Future);
                                             const order = await Kucoin_Future.placeOrderOnExchange(ExchangePair, OrderParam);
                                             res.json(order);
                                         } catch (error) {
@@ -537,6 +540,7 @@ const routes = [
 
                                         { path: "/Indo-Service/place-order", handler: async (req, res) => {
                                             try {
+                                                ExchangePair.setSymbol(Indodax_Services);
                                                 const order = await Indodax_Services.placeOrderOnExchange(ExchangePair, OrderParam);
                                                 res.json(order);
                                             } catch (error) {
@@ -609,7 +613,8 @@ const routes = [
 
                                         { path: "/Kraken-Service/place-order", handler: async (req, res) => {
                                             try {
-                                                const order = await Kraken.placeOrderOnExchange(OrderParam);
+                                                ExchangePair.setSymbol(Kraken);
+                                                const order = await Kraken.placeOrderOnExchange(ExchangePair, OrderParam);
                                                 res.json(order);
                                             } catch (error) {
                                                 console.error("Error placing an order:", error.message);
@@ -681,8 +686,8 @@ const routes = [
 
                                         { path: "/Gate-Service/place-order", handler: async (req, res) => {
                                             try {
-                                                // const order = await Gate_Service.placeOrderOnExchange("BTC_USDT", "buy", 0.01, 65000);
-                                                const order = await Gate_Service.placeOrderOnExchange(OrderParam);
+                                                ExchangePair.setSymbol(Gate_Service);
+                                                const order = await Gate_Service.placeOrderOnExchange(ExchangePair, OrderParam);
                                                 res.json(order);
                                             } catch (error) {
                                                 console.error("Error placing an order:", error.message);
@@ -754,8 +759,8 @@ const routes = [
     
                                             { path: "/BitFinex-Service/place-order", handler: async (req, res) => {
                                                 try {
-                                                    // const order = await BitFinex_Service.placeOrderOnExchange("tBTCUSD", "EXCHANGE LIMIT", 10000, 1);
-                                                    const order = await BitFinex_Service.placeOrderOnExchange(OrderParam);
+                                                    ExchangePair.setSymbol(BitFinex_Service);
+                                                    const order = await BitFinex_Service.placeOrderOnExchange(ExchangePair, OrderParam);
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error placing an order:", error.message);
@@ -830,7 +835,7 @@ const routes = [
     
                                             { path: "/Coinbase-Service/place-order", handler: async (req, res) => {
                                                 try {
-                                                    // const order = await CoinBase_Service.placeOrderOnExchange("2389293812345", "BTC-USD", "BUY", "market", "0.5");
+                                                    ExchangePair.setSymbol(CoinBase_Service);
                                                     const order = await CoinBase_Service.placeOrderOnExchange(ExchangePair, OrderParam);
                                                     res.json(order);
                                                 } catch (error) {
@@ -904,7 +909,8 @@ const routes = [
     
                                             { path: "/crypto-Service/place-order", handler: async (req, res) => {
                                                 try {
-                                                    const order = await Crypto.placeOrderOnExchange(OrderParam);
+                                                    ExchangePair.setSymbol(Crypto);
+                                                    const order = await Crypto.placeOrderOnExchange(ExchangePair, OrderParam);
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error placing an order:", error.message);
@@ -976,7 +982,7 @@ const routes = [
     
                                             { path: "/BitGet-Service/place-order", handler: async (req, res) => {
                                                 try {
-                                                    // const order = await BitGet_Service.placeOrderOnExchange("BTCUSDT_SPBL", "LIMIT", "buy", "normal", 23222.5, 1);
+                                                    ExchangePair.setSymbol(BitGet_Service);
                                                     const order = await BitGet_Service.placeOrderOnExchange(ExchangePair, OrderParam);
                                                     res.json(order);
                                                 } catch (error) {
@@ -1051,8 +1057,8 @@ const routes = [
     
                                             { path: "/Bitgetfuture-Service/place-order", handler: async (req, res) => {
                                                 try {
-                                                    // const order = await BitGetFuture_Service.placeOrderOnExchange("BTCUSDT", "USDT-FUTURES", "USDT", "isolated", 1, "buy", "limit");
-                                                    const order = await BitGetFuture_Service.placeOrderOnExchange(OrderParam, "isolated");
+                                                    ExchangePair.setSymbol(BitGetFuture_Service);
+                                                    const order = await BitGetFuture_Service.placeOrderOnExchange(ExchangePair, OrderParam);
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error placing an order:", error.message);
@@ -1125,8 +1131,8 @@ const routes = [
     
                                             { path: "/Mexc-Service/place-order", handler: async (req, res) => {
                                                 try {
-                                                    // const order = await Mexc_Service.placeOrderOnExchange("MXUSDT", "LIMIT", "buy", 23222.5, 1);
-                                                    const order = await Mexc_Service.placeOrderOnExchange(OrderParam);
+                                                    ExchangePair.setSymbol(Mexc_Service);
+                                                    const order = await Mexc_Service.placeOrderOnExchange(ExchangePair, OrderParam);
                                                     res.json(order);
                                                 } catch (error) {
                                                     console.error("Error placing an order:", error.message);

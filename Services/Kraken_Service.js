@@ -236,12 +236,13 @@ class Kraken {
        */
   static async placeOrderOnExchange(ExchangePair, OrderParam) {
     try {
+      const symbol = await ExchangePair.getSymbol();
       const params = this.buildQueryParams({
-        ordertype: OrderParam.getType(),
-        type: OrderParam.getSide(),
-        volume: OrderParam.getQty(),
-        pair: ExchangePair.getSymbol().toUpperCase(),
-        price: OrderParam.getPrice(),
+        pair: symbol.toUpperCase(),
+        ordertype: await OrderParam.getType(),
+        type: await OrderParam.getSide(),
+        volume: await OrderParam.getQty(),
+        price: await OrderParam.getPrice(),
       });
 
       const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");

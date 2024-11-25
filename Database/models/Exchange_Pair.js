@@ -1,11 +1,11 @@
-import sequelize from "./database";
+import sequelize from "../DB/database.js";
 import{ Model, DataTypes } from "sequelize";
 
 
 
-class ExchangePair extends Model {}
+class ExchangePairModel extends Model {}
 
-ExchangePair.init({
+ExchangePairModel.init({
   id: {
     type: DataTypes.INTEGER.UNSIGNED,
     primaryKey: true,
@@ -70,10 +70,10 @@ ExchangePair.init({
   charset: 'utf8mb4',
   collate: 'utf8mb4_unicode_ci',
   engine: 'InnoDB',
-  timestamps: true, 
+  timestamps: false, 
   paranoid: true, 
   underscored: true, 
   freezeTableName: true,
 });
 
-export default ExchangePair;
+export default ExchangePairModel;

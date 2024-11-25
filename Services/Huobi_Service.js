@@ -267,18 +267,20 @@ class huobiExchange{
      * @see https://huobiapi.github.io/docs/spot/v1/en/#place-a-new-order
      */
 
-    // static async placeOrderOnExchange({symbol, side, price, quantity}){
     static async placeOrderOnExchange(ExchangePair, OrderParam){
 
         try {
+            const symbol = await ExchangePair.getSymbol();
+            const type = await OrderParam.seType();
             const params = this.buildQueryParams({
-                "account-id" : ExchangePair.getAccID(),
-                symbol: ExchangePair.getSymbol().toLowerCase(),
-                type: OrderParam.seType().toLowerCase(),
-                price: OrderParam.getPrice(),
-                amount: OrderParam.getQty(),
+                "account-id" : await ExchangePair.getAccID(),
+                symbol: symbol.toLowerCase(),
+                type: type.toLowerCase(),
+                price: await OrderParam.getPrice(),
+                amount: await OrderParam.getQty(),
 
             });
+
       console.log("PARAMETERS:", params)
 
 

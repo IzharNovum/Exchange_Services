@@ -226,13 +226,16 @@ class TokoCrypto {
 
         static async placeOrderOnExchange(ExchangePair, OrderParam){
             try {
+              const symbol = await ExchangePair.getSymbol();
                 const params = this.buildQueryParams({
-                    symbol : ExchangePair.getSymbol().toUpperCase(),
-                    side : OrderParam.getSide(),
-                    type : OrderParam.getType(),
-                    quantity : OrderParam.getQty(),
-                    price : OrderParam.getPrice()
-                })
+                    symbol : symbol.toUpperCase(),
+                    side : await OrderParam.getSide(),
+                    type : await OrderParam.getType(),
+                    quantity : await OrderParam.getQty(),
+                    price : await OrderParam.getPrice()
+                });
+                // console.log("Response", params);
+
 
                 const response = await this.callExchangeAPI(this.endPoints.Place_Order, params, "POST");
 
@@ -246,7 +249,7 @@ class TokoCrypto {
                 // return await this.createSuccessPlaceOrderResult(response);
                 return response
             } catch (error) {
-                console.error("Error Placing An Order!", error.msg);
+                console.error("Error Placing An Order!", error);
                 throw error;
             }
         }

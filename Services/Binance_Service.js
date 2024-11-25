@@ -255,17 +255,18 @@ class BinanceService {
 
   static async placeOrderOnExchange(ExchangePair, OrderParam) {
     try {
+      const symbol = await ExchangePair.getSymbol();
       const params = this.buildQueryParams({
-        symbol: ExchangePair.getSymbol().toUpperCase(),
-        side: OrderParam.getSide(),
-        type: OrderParam.getType(),
-        price: OrderParam.getPrice(),
-        quantity: OrderParam.getQty(),
-        timeInForce: ExchangePair.getTimeinForce()
+        symbol: symbol.toUpperCase(),
+        side: await OrderParam.getSide(),
+        type: await OrderParam.getType(),
+        price: await OrderParam.getPrice(),
+        quantity: await OrderParam.getQty(),
+        timeInForce: await ExchangePair.getTimeInForce()
 
       });
 
-      console.log("PARAMETERS:", params)
+      console.log("PARAMETERS:", params);
 
       const response = await this.callExchangeAPI(
         this.endPoints.Place_Order,

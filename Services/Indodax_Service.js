@@ -207,22 +207,22 @@ class Indodax_Services{
      * @param {number} price - order price
      * @param {number} idr - amount of rupiah to buy btc.
      * @returns {Promise<Object>} - Details of the placed order.
-     * @see  https://indodax.com/downloads/INDODAXCOM-API-DOCUMENTATION.pdf
+     * @see https://github.com/btcid/indodax-official-api-docs/blob/master/Private-RestAPI.md#trade-endpoints
      */
     static async placeOrderOnExchange(ExchangePair, OrderParam){
         try {
+            const symbol = await ExchangePair.getSymbol();
             const params = this.buildQueryParams({
                 method : this.endPoints.Place_Order,
-                pair: ExchangePair.getSymbol().toLowerCase(),
-                type: OrderParam.getSide(),
-                price: OrderParam.getPrice(),
-                idr : OrderParam.getIDR(),
-                order_type: OrderParam.getType(),
-                time_in_force: ExchangePair.getTimeinForce()
+                pair: symbol.toLowerCase(),
+                type: await OrderParam.getSide(),
+                price: await OrderParam.getPrice(),
+                idr : await OrderParam.getIDR(),
+                order_type: await OrderParam.getType(),
+                time_in_force: await ExchangePair.getTimeInForce()
             });
-      console.log("PARAMETERS:", params)
-
-
+            //   console.log("PARAMETERS:", params)
+            
             const response = await this.callExchangeAPI("", params);
             console.log("Response From API:", response);
 
@@ -259,7 +259,7 @@ class Indodax_Services{
  * @async
  * @param {string} method - Method for the API Call "Like an endPoint".
  * @returns {Promise<{object}>} - List of pending orders.
- * @see  https://indodax.com/downloads/INDODAXCOM-API-DOCUMENTATION.pdf
+ * @see  https://github.com/btcid/indodax-official-api-docs/blob/master/Private-RestAPI.md#open-orders-endpoints
  */
     static async pendingOrders(){
         try {
@@ -292,7 +292,7 @@ class Indodax_Services{
      * @param {number} order_id - Order ID
      * @param {string} type - buy / sell
      * @returns {Promise<object>} - Status of Order cancellation
-     * @see https://www.gate.io/docs/developers/apiv4/en/#cancel-a-single-order
+     * @see https://github.com/btcid/indodax-official-api-docs/blob/master/Private-RestAPI.md#cancel-order-endpoints
      */
 
     static async cancelOrderFromExchange(pair, order_id, type){
@@ -327,7 +327,7 @@ class Indodax_Services{
      * @param {string} pair - Trading pair : btc_idr
      * @param {number} order_id - Order ID
      * @returns {Promise<object>} - Order details
-     * @see https://www.gate.io/docs/developers/apiv4/en/#cancel-a-single-order
+     * @see https://github.com/btcid/indodax-official-api-docs/blob/master/Private-RestAPI.md#get-order-endpoints
      */
 
     static async fetchOrderFromExchange(pair, order_id){
