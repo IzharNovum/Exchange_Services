@@ -15,7 +15,7 @@ import OkexService from "../Services/Okex_Service.js";
 import Kraken_Service from "../Services/Kraken_Service.js";
 import OrderParam from "../Models/OrderParam.js";
 import ExchangePair from "../Models/ExchangePair.js";
-import commonParam from "./CommonParams.js";
+
 
 
 
@@ -133,7 +133,7 @@ const bots = [
             Indicator_Triggers: "RSI",
             Minimum_Profit_for_Indicator_Trigger: 1,
         },
-        Exchange: 1
+        Exchange: 7
     },
     {
         Asset: {
@@ -159,7 +159,7 @@ const bots = [
             Indicator_Triggers: "RSI",
             Minimum_Profit_for_Indicator_Trigger: 1,
         },
-        Exchange: 0
+        Exchange: 1
     },
     {
         Asset: {
@@ -185,7 +185,7 @@ const bots = [
             Indicator_Triggers: "RSI",
             Minimum_Profit_for_Indicator_Trigger: 1,
         },
-        Exchange: 7
+        Exchange: 0
     }
 ];
 

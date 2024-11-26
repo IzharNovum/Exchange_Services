@@ -1,4 +1,6 @@
-import commonParam from "../ExchangeIntegration/CommonParams.js";
+import UserBots from "../Database/models/Userbots.js";
+import UserExchange from "../Database/models/UserExchange.js";
+import ExchangePairModel from "../Database/models/Exchange_Pair.js";
 
 class OrderParam {
 
@@ -44,31 +46,114 @@ class OrderParam {
     }
 
     static async getIDR(){
-        this.idr = await commonParam.Tdmode();
-        return this.idr;
+        await OrderParam.fetchidr();
+    
+        if (this.idrIndex === undefined) {
+            this.idrIndex = 0;
+        }
+    
+        if (this.idrIndex < this.idr.length) {
+            const IDR = this.idr[this.idrIndex];
+            this.idrIndex++;
+            return IDR;
+        } else {
+            console.warn("Index out of bounds for timeInForce.");
+            return null;
+        }
 
+    }
+
+    static async fetchidr() {
+        const id = await UserExchange.findAll({
+            attributes: ['Idr'],
+            raw: true
+        });
+        const allidr = id.map(row => row.Idr);
+        this.idr = allidr;
+
+        return this.idr;
     }
 
     static async getQty() {
-        this.quantity = await commonParam.Qty();
+        await OrderParam.fetchQty();
+    
+        if (this.qtyIndex === undefined) {
+            this.qtyIndex = 0;
+        }
+    
+        if (this.qtyIndex < this.quantity.length) {
+            const QTY = this.quantity[this.qtyIndex];
+            this.qtyIndex++;
+            return QTY;
+        } else {
+            console.warn("Index out of bounds for timeInForce.");
+            return null;
+        }
+    }
+
+    static async fetchQty() {
+        const quantity = await ExchangePairModel.findAll({
+            attributes: ['min_quantity'],
+            raw: true
+        });
+        const qty = quantity.map(row => row.min_quantity);
+        this.quantity = qty;
+
         return this.quantity;
     }
 
-    static setQty(quantity){
-        this.quantity = quantity;
-    }
-
      static async getPrice() {
-        this.price = await commonParam.Price();
-        return this.price;
+        await OrderParam.fetchPrice();
+    
+        if (this.priceIndex === undefined) {
+            this.priceIndex = 0;
+        }
+    
+        if (this.priceIndex < this.price.length) {
+            const Price = this.price[this.priceIndex];
+            this.priceIndex++;
+            return Price;
+        } else {
+            console.warn("Index out of bounds for timeInForce.");
+            return null;
+        }
     };
 
-    static setPrice(price){
-        this.price = price;
+    static async fetchPrice() {
+        const price = await UserBots.findAll({
+            attributes: ['initial_fund'],
+            raw: true
+        });
+        const allPrice = price.map(row => row.initial_fund);
+        this.price = allPrice;
+        return this.price;
     }
 
     static async getType() {
-        this.orderType = await commonParam.OrderType();
+        await OrderParam.fetchType();
+    
+        if (this.typeIndex === undefined) {
+            this.typeIndex = 0;
+        }
+    
+        if (this.typeIndex < this.orderType.length) {
+            const Type = this.orderType[this.typeIndex];
+            this.typeIndex++;
+            return Type;
+        } else {
+            console.warn("Index out of bounds for timeInForce.");
+            return null;
+        }
+    }
+
+    static async fetchType() {
+        const order = await UserBots.findAll({
+            attributes: ['order_type'],
+            raw: true
+        });
+
+        const alltype = order.map(row => row.order_type);
+        this.orderType = alltype;
         return this.orderType;
     }
 
