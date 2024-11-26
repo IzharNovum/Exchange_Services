@@ -133,7 +133,7 @@ const bots = [
             Indicator_Triggers: "RSI",
             Minimum_Profit_for_Indicator_Trigger: 1,
         },
-        Exchange: 7
+        Exchange: 0
     },
     {
         Asset: {
@@ -185,7 +185,7 @@ const bots = [
             Indicator_Triggers: "RSI",
             Minimum_Profit_for_Indicator_Trigger: 1,
         },
-        Exchange: 0
+        Exchange: 7
     }
 ];
 

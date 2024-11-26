@@ -48,233 +48,223 @@ class ExchangePair {
         this.marginMode = marginMode;
     }
 
-
     static async getTimeInForce() {
-        await ExchangePair.fetchForce();
-    
-        if (this.timeIndex === undefined) {
-            this.timeIndex = 0;
-        }
-    
-        if (this.timeIndex < this.timeInForce.length) {
-            const time = this.timeInForce[this.timeIndex];
-            this.timeIndex++;
-            return time;
-        } else {
-            console.warn("Index out of bounds for timeInForce.");
-            return null;
-        }
-    }
-
-    static async fetchForce() {
-        const rows = await UserExchange.findAll({
+       try{
+         const rows = await UserExchange.findAll({
             attributes: ['Timeinforce'],
             raw: true
         });
+
         const allTime = rows.map(row => row.Timeinforce);
         this.timeInForce = allTime;
-    
-        return this.timeInForce;
-    }
-    
 
-    static async getcliendOrderID() {
-        await ExchangePair.fetchcltID();
-    
-        if (this.cliendIndex === undefined) {
-            this.cliendIndex = 0;
+        if (this.timeIndex === undefined) {
+            this.timeIndex = 0;
+        }
+
+        if(this.timeIndex < this.timeInForce.length){
+            const time = this.timeInForce[this.timeIndex];
+            this.timeIndex++;
+            return time;
         }
     
-        if (this.cliendIndex < this.cliendOrderID.length) {
+        return this.timeInForce;
+    } catch(error) {
+        console.error("Index out of bounds for timeInForce.");
+        return null;
+    }
+}
+
+    static async getcliendOrderID() {
+        try{
+            const cliend = await UserExchange.findAll({
+                attributes: ['Clientorderid'],
+                raw: true
+            });
+            const allclient = cliend.map(row => row.Clientorderid);
+            this.cliendOrderID = allclient;
+        
+   
+           if (this.cliendIndex === undefined) {
+                this.cliendIndex = 0;
+            }
+
+           if (this.cliendIndex < this.cliendOrderID.length) {
             const cliendId = this.cliendOrderID[this.cliendIndex];
             this.cliendIndex++;
             return cliendId;
-        } else {
-            console.warn("Index out of bounds for timeInForce.");
-            return null;
-        }
-    }
-
-    static async fetchcltID() {
-        const cliend = await UserExchange.findAll({
-            attributes: ['Clientorderid'],
-            raw: true
-        });
-        const allclient = cliend.map(row => row.Clientorderid);
-        this.cliendOrderID = allclient;
-    
-        return this.cliendOrderID;
+            }
+       
+           return this.cliendOrderID;
+       } catch(error) {
+           console.error("Index out of bounds for timeInForce.");
+           return null;
+       }
     }
 
 
     static async tdMode() {
-        await ExchangePair.fetchTD();
-    
-        if (this.tdIndex === undefined) {
-            this.tdIndex = 0;
-        }
-    
-        if (this.tdIndex < this.tdmode.length) {
-            const tds = this.tdmode[this.tdIndex];
+        try{
+            const tdMod = await UserExchange.findAll({
+                attributes: ['TdMode'],
+                raw: true
+            });
+            const alltd = tdMod.map(row => row.TdMode);
+            this.tdmode = alltd;
+        
+   
+           if (this.tdIndex === undefined) {
+                this.tdIndex = 0;
+            }
+
+           if (this.tdIndex < this.tdmode.length) {
+            const tdMode = this.tdmode[this.tdIndex];
             this.tdIndex++;
-            return tds;
-        } else {
-            console.warn("Index out of bounds for timeInForce.");
-            return null;
-        }
+            return tdMode;
+            }
+       
+           return this.tdmode;
+       } catch(error) {
+           console.error("Index out of bounds for timeInForce.");
+           return null;
+       }
     }
-
-    static async fetchTD() {
-        const tdMod = await UserExchange.findAll({
-            attributes: ['TdMode'],
-            raw: true
-        });
-        const alltd = tdMod.map(row => row.TdMode);
-        this.tdmode = alltd;
-    
-        return this.tdmode;
-
-    }
-
 
     static async getAccID() {
-        await ExchangePair.fetchACC();
-    
-        if (this.AccidIndex === undefined) {
-            this.AccidIndex = 0;
-        }
-    
-        if (this.AccidIndex < this.accountID.length) {
-            const account = this.accountID[this.AccidIndex];
-            this.AccidIndex++;
-            return account;
-        } else {
-            console.warn("Index out of bounds for timeInForce.");
-            return null;
-        }
+        try{
+            const account = await UserExchange.findAll({
+                attributes: ['account'],
+                raw: true
+            });
+            const acc = account.map(row => row.account);
+            this.accountID = acc;
+        
+            if (this.AccidIndex === undefined) {
+                this.AccidIndex = 0;
+            }
+        
+            if (this.AccidIndex < this.accountID.length) {
+                const account = this.accountID[this.AccidIndex];
+                this.AccidIndex++;
+                return account;
+            } 
+            
+            return this.accountID;
+       } catch(error) {
+           console.error("Index out of bounds for timeInForce.");
+           return null;
+       }
     }
     static async fetchACC() {
-        const account = await UserExchange.findAll({
-            attributes: ['account'],
-            raw: true
-        });
-        const acc = account.map(row => row.account);
-        this.accountID = acc;
-    
-        return this.accountID;
+
     }
 
 
     static async getAccUUID() {
-        await ExchangePair.fetchACCUID();
-    
-        if (this.AccUID === undefined) {
-            this.AccUID = 0;
-        }
-    
-        if (this.AccUID < this.accntIDUUID.length) {
-            const AccUI = this.accntIDUUID[this.AccUID];
-            this.AccUID++;
-            return AccUI;
-        } else {
-            console.warn("Index out of bounds for timeInForce.");
-            return null;
-        }
-    }
-    static async fetchACCUID() {
-        const accUID = await UserExchange.findAll({
-            attributes: ['Accntuuid'],
-            raw: true
-        });
-        const allUID = accUID.map(row => row.Accntuuid);
-        this.accntIDUUID = allUID;
-    
-        return this.accntIDUUID;
+        try{
+            const accUID = await UserExchange.findAll({
+                attributes: ['Accntuuid'],
+                raw: true
+            });
+            const allUID = accUID.map(row => row.Accntuuid);
+            this.accntIDUUID = allUID;
+        
+            if (this.AccUID === undefined) {
+                this.AccUID = 0;
+            }
+        
+            if (this.AccUID < this.accntIDUUID.length) {
+                const AccUI = this.accntIDUUID[this.AccUID];
+                this.AccUID++;
+                return AccUI;
+            }
+            
+            return this.accntIDUUID;
+       } catch(error) {
+           console.error("Index out of bounds for timeInForce.");
+           return null;
+       }
     }
 
+
     static async getMarginMode(){
-        await ExchangePair.fetchMMode();
-    
-        if (this.Mmode === undefined) {
-            this.Mmode = 0;
-        }
-    
-        if (this.Mmode < this.marginMode.length) {
-            const Mode = this.marginMode[this.Mmode];
-            this.Mmode++;
-            return Mode;
-        } else {
-            console.warn("Index out of bounds for timeInForce.");
-            return null;
-        }
-    }
-    static async fetchMMode() {
-        const mode = await UserExchange.findAll({
-            attributes: ['Marginmode'],
-            raw: true
-        });
-        const allMode = mode.map(row => row.Marginmode);
-        this.marginMode = allMode;
-    
-        return this.marginMode;
+        try{
+            const mode = await UserExchange.findAll({
+                attributes: ['Marginmode'],
+                raw: true
+            });
+            const allMode = mode.map(row => row.Marginmode);
+            this.marginMode = allMode;
+        
+            if (this.Mmode === undefined) {
+                this.Mmode = 0;
+            }
+        
+            if (this.Mmode < this.marginMode.length) {
+                const Mode = this.marginMode[this.Mmode];
+                this.Mmode++;
+                return Mode;
+            }
+            
+            return this.marginMode;
+       } catch(error) {
+           console.error("Index out of bounds for timeInForce.");
+           return null;
+       }
     }
 
     static async getMarginCoin(){
-        await ExchangePair.fetchMCoin();
-    
-        if (this.marginIndex === undefined) {
-            this.marginIndex = 0;
-        }
-    
-        if (this.marginIndex < this.marginCoin.length) {
-            const Coin = this.marginCoin[this.marginIndex];
-            this.marginIndex++;
-            return Coin;
-        } else {
-            console.warn("Index out of bounds for timeInForce.");
-            return null;
-        }
+        try{
+            const margin = await UserExchange.findAll({
+                attributes: ['Margincoin'],
+                raw: true
+            });
+            const allCoin = margin.map(row => row.Margincoin);
+            this.marginCoin = allCoin;
+     
+            if (this.marginIndex === undefined) {
+                this.marginIndex = 0;
+            }
+        
+            if (this.marginIndex < this.marginCoin.length) {
+                const Coin = this.marginCoin[this.marginIndex];
+                this.marginIndex++;
+                return Coin;
+            } 
+            
+            return this.marginCoin;
+       } catch(error) {
+           console.error("Index out of bounds for timeInForce.");
+           return null;
+       }
     }
-    
-    static async fetchMCoin() {
-        const margin = await UserExchange.findAll({
-            attributes: ['Margincoin'],
-            raw: true
-        });
-        const allCoin = margin.map(row => row.Margincoin);
-        this.marginCoin = allCoin;
-    
-        return this.marginCoin;
-    }
-
 
     static async getLeverage(){
-        await ExchangePair.fetchLeverage();
-    
-        if (this.levIndex === undefined) {
-            this.levIndex = 0;
-        }
-    
-        if (this.levIndex < this.leverage.length) {
-            const leverge = this.leverage[this.levIndex];
-            this.levIndex++;
-            return leverge;
-        } else {
-            console.warn("Index out of bounds for timeInForce.");
-            return null;
-        }
+        try{
+            const levl = await UserExchange.findAll({
+                attributes: ['Leverage'],
+                raw: true
+            });
+            const lev = levl.map(row => row.Leverage);
+            this.leverage = lev;        
+   
+            if (this.levIndex === undefined) {
+                this.levIndex = 0;
+            }
+        
+            if (this.levIndex < this.leverage.length) {
+                const leverge = this.leverage[this.levIndex];
+                this.levIndex++;
+                return leverge;
+            }
+       
+           return this.leverage;
+       } catch(error) {
+           console.error("Index out of bounds for timeInForce.");
+           return null;
+       }
     }
 
-    static async fetchLeverage() {
-        const levl = await UserExchange.findAll({
-            attributes: ['Leverage'],
-            raw: true
-        });
-        const lev = levl.map(row => row.Leverage);
-        this.leverage = lev;
-
-        return this.leverage;
-    }
 
 
     static setPair(from, to) {

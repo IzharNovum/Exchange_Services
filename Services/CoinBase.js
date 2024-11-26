@@ -242,7 +242,7 @@ class CoinBase_Service{
             side: await OrderParam.getSide()
           });
 
-          // console.log("parameters:", params)
+          console.log("parameters:", params)
 
           const response = await this.callExchangeApi(this.endPoints.Place_Order, params, "POST");
 

@@ -263,7 +263,6 @@ class BinanceService {
         price: await OrderParam.getPrice(),
         quantity: await OrderParam.getQty(),
         timeInForce: await ExchangePair.getTimeInForce()
-
       });
 
       console.log("PARAMETERS:", params);

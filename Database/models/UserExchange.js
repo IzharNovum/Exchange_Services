@@ -44,6 +44,12 @@ UserExchange.init({
         type: DataTypes.STRING(1000),
         allowNull: true,
     },
+
+    side:{
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+
     Timeinforce: {
         type: DataTypes.ENUM('GTC', 'IOC', 'FOK'),
         allowNull: false,
@@ -69,8 +75,7 @@ UserExchange.init({
         allowNull: false,
         unique: true, 
       },
-    
-
+      
       Accntuuid: {
         type: DataTypes.STRING,
         allowNull: true,
